@@ -1,0 +1,177 @@
+{
+  "name": "monorepo",
+  "version": "2.0.0",
+  "description": "pnpm Workspaces Monorepo \u2014 apps/web (fullstack) + apps/marketing (static) + shared packages",
+  "triggers": {
+    "isMonorepo": [
+      "monorepo",
+      "workspace",
+      "packages",
+      "shared"
+    ],
+    "hasMultipleApps": true
+  },
+  "structure": {
+    "apps": [
+      "web",
+      "marketing"
+    ],
+    "packages": [
+      "ui",
+      "config",
+      "db"
+    ]
+  },
+  "packageManager": {
+    "tool": "pnpm",
+    "version": "^9",
+    "workspacesFile": "pnpm-workspace.yaml"
+  },
+  "tailwind": {
+    "version": 4,
+    "cssFile": "packages/ui/src/styles/globals.css",
+    "tokenPackage": "packages/ui/src/styles/globals.css",
+    "sharedTokens": true
+  },
+  "requiredFiles": [
+    "pnpm-workspace.yaml",
+    "package.json",
+    ".npmrc",
+    "docker-compose.yml",
+    "README.md",
+    "packages/ui/package.json",
+    "packages/ui/src/styles/globals.css",
+    "packages/ui/src/lib/utils.ts",
+    "packages/ui/src/components/button.tsx",
+    "packages/config/package.json",
+    "packages/config/typescript/base.json",
+    "packages/config/typescript/next.json",
+    "packages/db/package.json",
+    "packages/db/prisma/schema.prisma",
+    "packages/db/prisma/config.ts",
+    "packages/db/src/index.ts",
+    "apps/web/package.json",
+    "apps/marketing/package.json",
+    ".husky/pre-commit",
+    ".nvmrc",
+    "LICENSE",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    ".github/dependabot.yml",
+    ".github/PULL_REQUEST_TEMPLATE.md",
+    ".github/ISSUE_TEMPLATE/bug_report.md",
+    ".github/ISSUE_TEMPLATE/feature_request.md",
+    ".github/workflows/ci.yml",
+    "apps/web/app/api/health/route.ts",
+    "apps/web/instrumentation.ts",
+    "apps/web/app/error.tsx",
+    "apps/web/app/not-found.tsx",
+    "apps/web/app/global-error.tsx",
+    "apps/web/lib/env.ts",
+    "apps/web/lib/logger.ts",
+    "apps/web/vitest.config.ts",
+    "apps/web/tests/setup.ts",
+    "apps/web/tests/msw/handlers.ts",
+    "apps/web/tests/msw/server.ts",
+    "packages/db/prisma/seed.ts",
+    "apps/web/lib/csrf.ts",
+    "apps/web/lib/sanitize.ts"
+  ],
+  "classification": {
+    "packages": {
+      "@project-name/ui": {
+        "outputDir": "packages/ui/src/components",
+        "exportFrom": "packages/ui/src/index.ts"
+      },
+      "@project-name/db": {
+        "outputDir": "packages/db"
+      },
+      "@project-name/config": {
+        "outputDir": "packages/config"
+      }
+    },
+    "apps": {
+      "web": {
+        "path": "apps/web",
+        "importsFrom": [
+          "@project-name/ui",
+          "@project-name/db"
+        ]
+      },
+      "marketing": {
+        "path": "apps/marketing",
+        "importsFrom": [
+          "@project-name/ui"
+        ]
+      }
+    },
+    "categories": {
+      "layout": {
+        "outputPath": "packages/ui/src/components/{ComponentName}.tsx",
+        "signals": [
+          "Header",
+          "Footer",
+          "Navigation",
+          "Navbar",
+          "Sidebar",
+          "TopBar",
+          "Shell"
+        ]
+      },
+      "section": {
+        "outputPath": "apps/marketing/components/sections/{ComponentName}.tsx",
+        "signals": [
+          "Hero",
+          "Features",
+          "Pricing",
+          "Testimonials",
+          "CTA",
+          "FAQ",
+          "About",
+          "Team",
+          "Banner"
+        ]
+      },
+      "ui": {
+        "outputPath": "packages/ui/src/components/{ComponentName}.tsx",
+        "signals": [
+          "Button",
+          "Card",
+          "Badge",
+          "Input",
+          "Label",
+          "Avatar",
+          "Toast",
+          "Skeleton"
+        ]
+      },
+      "feature": {
+        "outputPath": "apps/web/components/{ComponentName}.tsx",
+        "signals": [
+          "Dashboard",
+          "Settings",
+          "Profile",
+          "Admin",
+          "Analytics"
+        ]
+      },
+      "page": {
+        "outputPath": "apps/web/app/{route}/page.tsx",
+        "signals": [
+          "Page",
+          "Dashboard",
+          "Login",
+          "Signup",
+          "Profile",
+          "Settings",
+          "About",
+          "Contact"
+        ]
+      }
+    }
+  },
+  "routing": {
+    "strategy": "app-router",
+    "srcDir": "apps/web/"
+  }
+}

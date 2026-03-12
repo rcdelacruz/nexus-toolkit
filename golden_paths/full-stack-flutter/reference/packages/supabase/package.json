@@ -1,0 +1,29 @@
+{
+  "name": "@project-name/supabase",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types/database.ts",
+    "./client/browser": "./src/client/browser.ts",
+    "./client/server": "./src/client/server.ts",
+    "./helpers/auth": "./src/helpers/auth.ts",
+    "./helpers/rbac": "./src/helpers/rbac.ts",
+    "./helpers/audit": "./src/helpers/audit.ts",
+    "./helpers/realtime": "./src/helpers/realtime.ts",
+    "./helpers/storage": "./src/helpers/storage.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.97.0",
+    "@supabase/ssr": "^0.8.0"
+  },
+  "devDependencies": {
+    "@project-name/config": "workspace:*",
+    "typescript": "^5.8"
+  }
+}

@@ -1,0 +1,248 @@
+{
+  "name": "full-stack-rn",
+  "version": "1.1.0",
+  "description": "Turborepo monorepo \u2014 apps/web (Next.js 16 + Supabase API) + apps/mobile (Expo 54 bare + NativeWind) + shared packages",
+  "triggers": {
+    "isMonorepo": [
+      "monorepo",
+      "workspace"
+    ],
+    "hasMobile": [
+      "mobile",
+      "native",
+      "expo",
+      "ios",
+      "android"
+    ],
+    "hasMultipleApps": true
+  },
+  "structure": {
+    "apps": [
+      "web",
+      "mobile"
+    ],
+    "packages": [
+      "ui-primitives",
+      "ui-web",
+      "ui-mobile",
+      "shared",
+      "supabase",
+      "config"
+    ]
+  },
+  "packageManager": {
+    "tool": "pnpm",
+    "version": "^9",
+    "workspacesFile": "pnpm-workspace.yaml"
+  },
+  "buildSystem": {
+    "tool": "turborepo",
+    "version": "^2.8.10",
+    "remoteCache": true
+  },
+  "tailwind": {
+    "version": 4,
+    "cssFile": "packages/ui-web/src/styles/globals.css",
+    "tokenPackage": "packages/ui-web/src/styles/globals.css",
+    "primitives": "packages/ui-primitives/src/tokens/colors.ts",
+    "sharedTokens": true,
+    "nativewind": {
+      "version": 4,
+      "tailwindVersion": 3,
+      "cssFile": "apps/mobile/global.css"
+    }
+  },
+  "auth": {
+    "provider": "supabase",
+    "oauth": [
+      "google"
+    ],
+    "methods": [
+      "email",
+      "oauth"
+    ]
+  },
+  "database": {
+    "provider": "supabase",
+    "rbac": true,
+    "auditLogging": true,
+    "realtime": true,
+    "storage": true
+  },
+  "routing": {
+    "srcDir": "apps/web/",
+    "strategy": "app-router",
+    "asyncParams": true
+  },
+  "requiredFiles": [
+    "turbo.json",
+    "pnpm-workspace.yaml",
+    "package.json",
+    ".npmrc",
+    "docker-compose.yml",
+    "README.md",
+    "packages/ui-primitives/package.json",
+    "packages/ui-primitives/src/tokens/colors.ts",
+    "packages/ui-primitives/src/index.ts",
+    "packages/ui-web/package.json",
+    "packages/ui-web/src/styles/globals.css",
+    "packages/ui-web/src/lib/utils.ts",
+    "packages/ui-mobile/package.json",
+    "packages/shared/package.json",
+    "packages/shared/src/types/index.ts",
+    "packages/shared/src/utils/index.ts",
+    "packages/supabase/package.json",
+    "packages/supabase/src/types/database.ts",
+    "packages/supabase/src/client/browser.ts",
+    "packages/supabase/src/client/server.ts",
+    "packages/supabase/src/helpers/rbac.ts",
+    "packages/supabase/sql/schema.sql",
+    "packages/config/package.json",
+    "packages/config/typescript/base.json",
+    "packages/config/typescript/next.json",
+    "packages/config/typescript/react-library.json",
+    "packages/config/typescript/react-native.json",
+    "apps/web/package.json",
+    "apps/web/app/globals.css",
+    "apps/web/proxy.ts",
+    "apps/mobile/package.json",
+    "apps/mobile/app.json",
+    "apps/mobile/babel.config.js",
+    "apps/mobile/metro.config.js",
+    "apps/mobile/global.css",
+    ".husky/pre-commit",
+    ".nvmrc",
+    "LICENSE",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    ".github/dependabot.yml",
+    ".github/PULL_REQUEST_TEMPLATE.md",
+    ".github/ISSUE_TEMPLATE/bug_report.md",
+    ".github/ISSUE_TEMPLATE/feature_request.md",
+    ".github/workflows/ci.yml",
+    "apps/web/app/api/v1/health/route.ts",
+    "apps/web/app/api/health/route.ts",
+    "apps/web/instrumentation.ts",
+    "apps/web/app/error.tsx",
+    "apps/web/app/not-found.tsx",
+    "apps/web/app/global-error.tsx",
+    "apps/web/lib/env.ts",
+    "apps/web/lib/logger.ts",
+    "apps/web/vitest.config.ts",
+    "apps/web/tests/setup.ts",
+    "apps/web/tests/msw/handlers.ts",
+    "apps/web/tests/msw/server.ts",
+    "apps/web/lib/csrf.ts",
+    "apps/web/lib/sanitize.ts"
+  ],
+  "classification": {
+    "packages": {
+      "@project-name/ui-primitives": {
+        "outputDir": "packages/ui-primitives/src/tokens",
+        "exportFrom": "packages/ui-primitives/src/index.ts",
+        "note": "Design tokens only \u2014 no React components, no platform-specific code"
+      },
+      "@project-name/ui-web": {
+        "outputDir": "packages/ui-web/src/components",
+        "exportFrom": "packages/ui-web/src/index.ts",
+        "note": "Web-only \u2014 shadcn/ui components, Tailwind v4 CSS vars"
+      },
+      "@project-name/ui-mobile": {
+        "outputDir": "packages/ui-mobile/src/components",
+        "exportFrom": "packages/ui-mobile/src/index.ts",
+        "note": "Mobile-only \u2014 NativeWind components, Tailwind v3 className"
+      },
+      "@project-name/shared": {
+        "outputDir": "packages/shared/src",
+        "exportFrom": "packages/shared/src/index.ts",
+        "note": "Platform-agnostic \u2014 types, utils, constants, Zod schemas"
+      },
+      "@project-name/supabase": {
+        "outputDir": "packages/supabase/src"
+      },
+      "@project-name/config": {
+        "outputDir": "packages/config"
+      }
+    },
+    "apps": {
+      "web": {
+        "path": "apps/web",
+        "importsFrom": [
+          "@project-name/ui-web",
+          "@project-name/supabase",
+          "@project-name/shared"
+        ]
+      },
+      "mobile": {
+        "path": "apps/mobile",
+        "importsFrom": [
+          "@project-name/ui-mobile",
+          "@project-name/supabase",
+          "@project-name/shared"
+        ]
+      }
+    },
+    "categories": {
+      "layout": {
+        "outputPath": "apps/web/components/layout/{ComponentName}.tsx",
+        "signals": [
+          "Header",
+          "Footer",
+          "Navigation",
+          "Navbar",
+          "Sidebar",
+          "TopBar",
+          "Shell"
+        ]
+      },
+      "section": {
+        "outputPath": "apps/web/components/sections/{ComponentName}.tsx",
+        "signals": [
+          "Hero",
+          "Features",
+          "Pricing",
+          "Testimonials",
+          "CTA",
+          "FAQ",
+          "About",
+          "Team",
+          "Banner"
+        ]
+      },
+      "ui": {
+        "outputPath": "apps/web/components/ui/{ComponentName}.tsx",
+        "signals": [
+          "Button",
+          "Card",
+          "Badge",
+          "Input",
+          "Label",
+          "Avatar",
+          "Toast",
+          "Skeleton"
+        ]
+      },
+      "screen": {
+        "outputPath": "apps/mobile/app/{route}.tsx",
+        "signals": [
+          "Screen",
+          "View"
+        ],
+        "note": "{route} strips the Screen/View suffix and lowercases \u2014 agent places in the correct Expo Router group"
+      },
+      "page": {
+        "outputPath": "apps/web/app/{route}/page.tsx",
+        "signals": [
+          "Page",
+          "Dashboard",
+          "Login",
+          "Signup",
+          "Profile",
+          "Settings",
+          "About",
+          "Contact"
+        ]
+      }
+    }
+  }
+}

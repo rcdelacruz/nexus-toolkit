@@ -1,0 +1,30 @@
+{
+  "name": "@project-name/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "db:generate": "prisma generate --config prisma/config.ts",
+    "db:migrate": "prisma migrate dev --config prisma/config.ts",
+    "db:push": "prisma db push --config prisma/config.ts",
+    "db:studio": "prisma studio --config prisma/config.ts",
+    "db:seed": "tsx prisma/seed.ts",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.4.1",
+    "@prisma/client": "^7.4.1",
+    "pg": "^8.18.0"
+  },
+  "devDependencies": {
+    "@project-name/config": "workspace:*",
+    "@types/node": "^22",
+    "@types/pg": "^8.11.14",
+    "prisma": "^7.4.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5"
+  }
+}

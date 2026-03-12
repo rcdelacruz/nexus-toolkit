@@ -1,0 +1,22 @@
+{
+  "name": "@project-name/config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.18.0",
+    "typescript-eslint": "^8"
+  },
+  "peerDependencies": {
+    "eslint": "^9",
+    "eslint-config-next": "^16.1.0"
+  },
+  "exports": {
+    "./typescript/base.json": "./typescript/base.json",
+    "./typescript/next.json": "./typescript/next.json",
+    "./typescript/react-library.json": "./typescript/react-library.json",
+    "./eslint/base": "./eslint/base.js",
+    "./eslint/next": "./eslint/next.js"
+  }
+}

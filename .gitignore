@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+*.egg
+
+# Pytest
+.pytest_cache/
+
+# Env
+.env
+.env.*
+
+# OS
+.DS_Store
+
+# Local Claude config
+.claude/settings.local.json
+
+# Local MCP config (has local paths)
+.mcp.json
+
+# Wrangler
+.wrangler/
+
+# Test artifacts
+sample-portifolio/
+sample-portifolio.zip

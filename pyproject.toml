@@ -1,0 +1,73 @@
+[project]
+name = "nexus-toolkit"
+version = "2.2.0"
+description = "Hybrid search, retrieval, and Figma Make boilerplate generation MCP server"
+authors = [
+    {name = "Ronald dela Cruz", email = "rcdelacruz@users.noreply.github.com"}
+]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp[cli]>=1.0.0",
+    "httpx>=0.27.0",
+    "beautifulsoup4>=4.12.0",
+    "ddgs>=1.0.0",
+    "typer>=0.12.0",
+    "rich>=13.0.0",
+]
+
+[project.scripts]
+nexus-mcp = "nexus_server:main"
+nexus = "nexus_cli:main"
+
+[project.urls]
+Homepage = "https://nexus.coderstudio.co"
+Repository = "https://github.com/rcdelacruz/nexus-mcp"
+Issues = "https://github.com/rcdelacruz/nexus-mcp/issues"
+Changelog = "https://github.com/rcdelacruz/nexus-mcp/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["nexus_server", "nexus_cli"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tools*", "golden_paths"]
+
+[tool.setuptools.package-data]
+# **/* matches regular files; **/.*  and explicit patterns cover dotfiles
+# (.env.example, .prettierrc, .gitignore, etc.) which glob **/* skips
+"golden_paths" = ["**/*", "**/.*", "**/.env*", "**/.prettierrc", "**/.gitignore", "**/.husky/*", "**/.github/**/*", "**/.github/*"]
+# Agent markdown files used as system prompts by the pipeline (Transform Queue, Fix Validation)
+# and dev-workflow agents (run_agent MCP tool)
+"tools" = ["agents/*.md", "dev-agents/**/*.md"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --cov=. --cov-report=term-missing"
+
+[tool.coverage.run]
+omit = ["tests/*", "venv/*", ".venv/*"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.0.0",
+]

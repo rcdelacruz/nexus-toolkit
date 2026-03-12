@@ -1,0 +1,36 @@
+{
+  "name": "@project-name/ui-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./styles": "./src/styles/globals.css",
+    "./lib/utils": "./src/lib/utils.ts",
+    "./*": "./src/components/*.tsx"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.475.0",
+    "tailwind-merge": "^3.0.1",
+    "tw-animate-css": "^1.3.0"
+  },
+  "devDependencies": {
+    "@project-name/config": "workspace:*",
+    "@project-name/ui-primitives": "workspace:*",
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22",
+    "@types/react": "^19.2.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.8"
+  }
+}

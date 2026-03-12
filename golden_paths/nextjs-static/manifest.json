@@ -1,0 +1,134 @@
+{
+  "name": "nextjs-static",
+  "version": "2.0.0",
+  "description": "Next.js 16 Static Marketing Site — landing pages, no auth/db/API layer",
+  "triggers": {
+    "isLandingPage": [
+      "hero",
+      "landing",
+      "marketing",
+      "homepage"
+    ],
+    "isMarketing": [
+      "features",
+      "pricing",
+      "testimonials",
+      "cta",
+      "faq"
+    ],
+    "isStatic": [
+      "about",
+      "contact",
+      "blog"
+    ],
+    "noAuth": true,
+    "noDatabase": true
+  },
+  "routing": {
+    "strategy": "app-router",
+    "asyncParams": true,
+    "staticExport": true
+  },
+  "tailwind": {
+    "version": 4,
+    "configFile": null,
+    "cssFile": "app/globals.css",
+    "tokenDirective": "@theme inline",
+    "animatePackage": "tw-animate-css"
+  },
+  "tokenTargets": [
+    "app/globals.css"
+  ],
+  "requiredFiles": [
+    "app/layout.tsx",
+    "app/globals.css",
+    "lib/utils.ts",
+    "components/layout/header.tsx",
+    "components/layout/footer.tsx",
+    "next.config.ts",
+    "tsconfig.json",
+    "package.json",
+    ".env.example",
+    "Dockerfile",
+    "docker-compose.yml",
+    "README.md",
+    "eslint.config.mjs",
+    ".prettierrc",
+    "postcss.config.mjs",
+    ".husky/pre-commit",
+    ".nvmrc",
+    "LICENSE",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    ".github/dependabot.yml",
+    ".github/PULL_REQUEST_TEMPLATE.md",
+    ".github/ISSUE_TEMPLATE/bug_report.md",
+    ".github/ISSUE_TEMPLATE/feature_request.md",
+    ".github/workflows/ci.yml",
+    "public/robots.txt",
+    "app/error.tsx",
+    "app/not-found.tsx",
+    "lib/env.ts",
+    "vitest.config.ts",
+    "tests/setup.ts",
+    "tests/msw/handlers.ts",
+    "tests/msw/server.ts"
+  ],
+  "optionalFiles": {
+    "isMarketing": [
+      "components/sections/Hero.tsx",
+      "components/sections/Features.tsx",
+      "components/sections/Pricing.tsx",
+      "components/sections/Testimonials.tsx",
+      "components/sections/CTA.tsx"
+    ]
+  },
+  "classification": {
+    "categories": {
+      "layout": {
+        "outputPath": "components/layout/{domain}.tsx",
+        "signals": [
+          "Header",
+          "Footer",
+          "Navigation",
+          "Navbar",
+          "Nav",
+          "Sidebar",
+          "TopBar",
+          "Shell"
+        ]
+      },
+      "section": {
+        "outputPath": "components/sections/{ComponentName}.tsx",
+        "signals": [
+          "Hero",
+          "Features",
+          "Pricing",
+          "Testimonials",
+          "CTA",
+          "FAQ",
+          "About",
+          "Team",
+          "Banner"
+        ]
+      },
+      "ui": {
+        "outputPath": "components/ui/{ComponentName}.tsx",
+        "signals": [
+          "Button",
+          "Card",
+          "Badge",
+          "Input",
+          "Label",
+          "Avatar",
+          "Toast",
+          "Skeleton",
+          "Separator"
+        ]
+      },
+      "default": {
+        "outputPath": "components/sections/{ComponentName}.tsx"
+      }
+    }
+  }
+}

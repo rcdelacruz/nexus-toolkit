@@ -1,0 +1,62 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Next.js build
+.next/
+out/
+
+# Flutter / Dart build
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+apps/mobile/.dart_tool/
+apps/mobile/build/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+
+# Production builds
+dist/
+
+# Testing
+coverage/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+!.env.example
+apps/mobile/.env.json
+!apps/mobile/.env.example.json
+
+# Misc
+.DS_Store
+*.pem
+Thumbs.db
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Dart codegen
+*.g.dart
+*.freezed.dart
+*.gen.dart
+
+# Vercel
+.vercel
+
+# Turbo
+.turbo
+
+# Supabase generated types
+generated/
+src/generated/

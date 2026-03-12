@@ -1,0 +1,31 @@
+{
+  "name": "@project-name/ui-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/components/*.tsx",
+    "./lib/utils": "./src/lib/utils.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.2.4",
+    "react-native": "^0.81.0"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "nativewind": "^4.2.2"
+  },
+  "devDependencies": {
+    "@project-name/config": "workspace:*",
+    "@project-name/ui-primitives": "workspace:*",
+    "@types/react": "^19.2.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.8"
+  }
+}

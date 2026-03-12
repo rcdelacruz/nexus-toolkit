@@ -1,0 +1,8 @@
+{
+  "extends": "@project-name/config/typescript/next.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"]
+    }
+  }
+}

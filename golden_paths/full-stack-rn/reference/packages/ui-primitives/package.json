@@ -1,0 +1,21 @@
+{
+  "name": "@project-name/ui-primitives",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens/colors": "./src/tokens/colors.ts",
+    "./tokens/spacing": "./src/tokens/spacing.ts",
+    "./tokens/typography": "./src/tokens/typography.ts",
+    "./tokens/radius": "./src/tokens/radius.ts",
+    "./tokens/shadows": "./src/tokens/shadows.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@project-name/config": "workspace:*",
+    "typescript": "^5.8"
+  }
+}

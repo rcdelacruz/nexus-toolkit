@@ -1,0 +1,150 @@
+{
+  "name": "vite-spa",
+  "version": "2.0.0",
+  "description": "Vite 6 + React 19.2 SPA with React Router v7 \u2014 client-only, no SSR",
+  "triggers": {
+    "isSPA": [
+      "spa",
+      "dashboard",
+      "tool",
+      "admin",
+      "internal"
+    ],
+    "noSSR": true,
+    "hasRouting": [
+      "page",
+      "screen",
+      "route",
+      "view"
+    ]
+  },
+  "routing": {
+    "strategy": "react-router-v7",
+    "routerFile": "src/routes/index.tsx",
+    "importFrom": "react-router"
+  },
+  "tailwind": {
+    "version": 4,
+    "configFile": null,
+    "cssFile": "src/styles/globals.css",
+    "tokenDirective": "@theme inline",
+    "animatePackage": "tw-animate-css",
+    "plugin": "@tailwindcss/vite"
+  },
+  "tokenTargets": [
+    "src/styles/globals.css"
+  ],
+  "requiredFiles": [
+    "src/main.tsx",
+    "src/routes/index.tsx",
+    "src/routes/Root.tsx",
+    "src/styles/globals.css",
+    "src/lib/utils.ts",
+    "src/lib/api.ts",
+    "src/store/useAppStore.ts",
+    "vite.config.ts",
+    "index.html",
+    "tsconfig.json",
+    "package.json",
+    ".env.example",
+    "Dockerfile",
+    "README.md",
+    ".husky/pre-commit",
+    ".nvmrc",
+    "LICENSE",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    ".github/dependabot.yml",
+    ".github/PULL_REQUEST_TEMPLATE.md",
+    ".github/ISSUE_TEMPLATE/bug_report.md",
+    ".github/ISSUE_TEMPLATE/feature_request.md",
+    ".github/workflows/ci.yml",
+    "src/components/ErrorBoundaryPage.tsx",
+    "src/lib/env.ts",
+    "vitest.config.ts",
+    "tests/setup.ts",
+    "tests/msw/handlers.ts",
+    "tests/msw/server.ts",
+    "docker-compose.yml"
+  ],
+  "optionalFiles": {
+    "hasRouting": [
+      "src/routes/pages/HomePage.tsx",
+      "src/routes/pages/DashboardPage.tsx",
+      "src/routes/pages/NotFoundPage.tsx"
+    ]
+  },
+  "classification": {
+    "categories": {
+      "layout": {
+        "outputPath": "src/components/layout/{ComponentName}.tsx",
+        "signals": [
+          "Header",
+          "Sidebar",
+          "Footer",
+          "Navigation",
+          "Navbar",
+          "Nav",
+          "TopBar",
+          "Shell"
+        ]
+      },
+      "section": {
+        "outputPath": "src/components/sections/{ComponentName}.tsx",
+        "signals": [
+          "Hero",
+          "Features",
+          "Pricing",
+          "Testimonials",
+          "CTA",
+          "FAQ",
+          "About",
+          "Team",
+          "Banner"
+        ]
+      },
+      "ui": {
+        "outputPath": "src/components/ui/{ComponentName}.tsx",
+        "signals": [
+          "Button",
+          "Card",
+          "Badge",
+          "Input",
+          "Label",
+          "Avatar",
+          "Toast",
+          "Skeleton",
+          "Separator"
+        ]
+      },
+      "page": {
+        "outputPath": "src/routes/pages/{ComponentName}.tsx",
+        "signals": [
+          "Page",
+          "View",
+          "Screen",
+          "Route"
+        ],
+        "note": "React Router v7 pages \u2014 filename keeps PascalCase (e.g. LoginPage.tsx, DashboardPage.tsx)"
+      },
+      "feature": {
+        "outputPath": "src/components/features/{domain}/{ComponentName}.tsx",
+        "signals": [
+          "Dashboard",
+          "Profile",
+          "Settings",
+          "Auth",
+          "Login",
+          "Signup",
+          "Form",
+          "Table",
+          "List",
+          "Grid",
+          "Chart",
+          "Stats",
+          "Analytics"
+        ]
+      }
+    }
+  }
+}

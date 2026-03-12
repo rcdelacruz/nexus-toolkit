@@ -1,0 +1,273 @@
+{
+  "name": "full-stack-flutter",
+  "version": "1.0.0",
+  "description": "Turborepo monorepo \u2014 apps/web (Next.js 16 + Supabase REST API + full web UI) + apps/mobile (Flutter 3.32 + Riverpod + go_router) + shared TypeScript packages",
+  "triggers": {
+    "isMonorepo": [
+      "monorepo",
+      "workspace"
+    ],
+    "hasMobile": [
+      "mobile",
+      "flutter",
+      "dart",
+      "ios",
+      "android"
+    ],
+    "hasMultipleApps": true
+  },
+  "structure": {
+    "apps": [
+      "web",
+      "mobile"
+    ],
+    "packages": [
+      "ui-primitives",
+      "ui-web",
+      "shared",
+      "supabase",
+      "config"
+    ]
+  },
+  "packageManager": {
+    "tool": "pnpm",
+    "version": "^9",
+    "workspacesFile": "pnpm-workspace.yaml",
+    "note": "apps/mobile (Flutter) is excluded from pnpm workspace \u2014 managed by pub"
+  },
+  "buildSystem": {
+    "tool": "turborepo",
+    "version": "^2.8.10",
+    "remoteCache": true,
+    "note": "Turbo tasks apply to apps/web and packages/* only \u2014 use Makefile for Flutter tasks"
+  },
+  "tailwind": {
+    "version": 4,
+    "cssFile": "packages/ui-web/src/styles/globals.css",
+    "tokenPackage": "packages/ui-web/src/styles/globals.css",
+    "primitives": "packages/ui-primitives/src/tokens/colors.ts",
+    "sharedTokens": true
+  },
+  "mobile": {
+    "language": "dart",
+    "framework": "flutter",
+    "version": "^3.32.0",
+    "dartSdk": ">=3.8.0 <4.0.0",
+    "stateManagement": "riverpod",
+    "routing": "go_router",
+    "auth": "supabase_flutter",
+    "buildTool": "pub",
+    "note": "Flutter app is a self-contained Dart project \u2014 no pnpm/turbo integration"
+  },
+  "auth": {
+    "provider": "supabase",
+    "oauth": [
+      "google"
+    ],
+    "methods": [
+      "email",
+      "oauth"
+    ]
+  },
+  "database": {
+    "provider": "supabase",
+    "rbac": true,
+    "auditLogging": true,
+    "realtime": true,
+    "storage": true
+  },
+  "routing": {
+    "srcDir": "apps/web/",
+    "strategy": "app-router",
+    "asyncParams": true
+  },
+  "requiredFiles": [
+    "turbo.json",
+    "pnpm-workspace.yaml",
+    "docker-compose.yml",
+    "package.json",
+    ".npmrc",
+    "Makefile",
+    "README.md",
+    "packages/ui-primitives/package.json",
+    "packages/ui-primitives/src/tokens/colors.ts",
+    "packages/ui-primitives/src/index.ts",
+    "packages/ui-web/package.json",
+    "packages/ui-web/src/styles/globals.css",
+    "packages/ui-web/src/lib/utils.ts",
+    "packages/shared/package.json",
+    "packages/shared/src/types/index.ts",
+    "packages/shared/src/utils/index.ts",
+    "packages/supabase/package.json",
+    "packages/supabase/src/types/database.ts",
+    "packages/supabase/src/client/browser.ts",
+    "packages/supabase/src/client/server.ts",
+    "packages/supabase/src/helpers/rbac.ts",
+    "packages/supabase/sql/schema.sql",
+    "packages/config/package.json",
+    "packages/config/typescript/base.json",
+    "packages/config/typescript/next.json",
+    "packages/config/typescript/react-library.json",
+    "apps/web/package.json",
+    "apps/web/app/globals.css",
+    "apps/web/proxy.ts",
+    "apps/web/app/api/v1/health/route.ts",
+    "apps/web/app/api/health/route.ts",
+    "apps/web/instrumentation.ts",
+    "apps/mobile/pubspec.yaml",
+    "apps/mobile/analysis_options.yaml",
+    "apps/mobile/lib/main.dart",
+    "apps/mobile/lib/app.dart",
+    "apps/mobile/lib/core/router/app_router.dart",
+    "apps/mobile/lib/core/supabase/supabase_service.dart",
+    "apps/mobile/lib/features/auth/providers/auth_provider.dart",
+    ".husky/pre-commit",
+    ".nvmrc",
+    "LICENSE",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    ".github/dependabot.yml",
+    ".github/PULL_REQUEST_TEMPLATE.md",
+    ".github/ISSUE_TEMPLATE/bug_report.md",
+    ".github/ISSUE_TEMPLATE/feature_request.md",
+    ".github/workflows/ci.yml",
+    "apps/web/app/error.tsx",
+    "apps/web/app/not-found.tsx",
+    "apps/web/app/global-error.tsx",
+    "apps/web/lib/env.ts",
+    "apps/web/lib/logger.ts",
+    "apps/web/vitest.config.ts",
+    "apps/web/tests/setup.ts",
+    "apps/web/tests/msw/handlers.ts",
+    "apps/web/tests/msw/server.ts",
+    "apps/web/lib/csrf.ts",
+    "apps/web/lib/sanitize.ts"
+  ],
+  "classification": {
+    "packages": {
+      "@project-name/ui-primitives": {
+        "outputDir": "packages/ui-primitives/src/tokens",
+        "exportFrom": "packages/ui-primitives/src/index.ts",
+        "note": "Design tokens only \u2014 pure TS constants; web side only; Flutter mirrors these in color_tokens.dart"
+      },
+      "@project-name/ui-web": {
+        "outputDir": "packages/ui-web/src/components",
+        "exportFrom": "packages/ui-web/src/index.ts",
+        "note": "Web-only \u2014 shadcn/ui components, Tailwind v4 CSS vars"
+      },
+      "@project-name/shared": {
+        "outputDir": "packages/shared/src",
+        "exportFrom": "packages/shared/src/index.ts",
+        "note": "TypeScript types/utils for web API responses; web side only \u2014 Flutter defines its own Dart models"
+      },
+      "@project-name/supabase": {
+        "outputDir": "packages/supabase/src"
+      },
+      "@project-name/config": {
+        "outputDir": "packages/config"
+      }
+    },
+    "apps": {
+      "web": {
+        "path": "apps/web",
+        "language": "typescript",
+        "importsFrom": [
+          "@project-name/ui-web",
+          "@project-name/supabase",
+          "@project-name/shared"
+        ]
+      },
+      "mobile": {
+        "path": "apps/mobile",
+        "language": "dart",
+        "note": "Flutter app \u2014 outside pnpm workspace; imports from pub.dev packages only; no @project-name/* imports"
+      }
+    },
+    "categories": {
+      "layout": {
+        "outputPath": "apps/web/components/layout/{ComponentName}.tsx",
+        "signals": [
+          "Header",
+          "Footer",
+          "Navigation",
+          "Navbar",
+          "Sidebar",
+          "TopBar",
+          "Shell"
+        ]
+      },
+      "section": {
+        "outputPath": "apps/web/components/sections/{ComponentName}.tsx",
+        "signals": [
+          "Hero",
+          "Features",
+          "Pricing",
+          "Testimonials",
+          "CTA",
+          "FAQ",
+          "About",
+          "Team",
+          "Banner"
+        ]
+      },
+      "ui": {
+        "outputPath": "apps/web/components/ui/{ComponentName}.tsx",
+        "signals": [
+          "Button",
+          "Card",
+          "Badge",
+          "Input",
+          "Label",
+          "Avatar",
+          "Toast",
+          "Skeleton"
+        ]
+      },
+      "screen": {
+        "outputPath": "apps/mobile/lib/features/{domain}/screens/{ComponentName}.dart",
+        "signals": [
+          "Screen",
+          "View"
+        ]
+      },
+      "widget": {
+        "outputPath": "apps/mobile/lib/features/{domain}/widgets/{ComponentName}.dart",
+        "signals": [
+          "Widget",
+          "Chip",
+          "Tile",
+          "Item",
+          "Row",
+          "Cell",
+          "Card"
+        ]
+      },
+      "page": {
+        "outputPath": "apps/web/app/{route}/page.tsx",
+        "signals": [
+          "Page",
+          "Route"
+        ],
+        "note": "Web Next.js pages only \u2014 Screen/View are intentionally excluded (those are Flutter screens)"
+      },
+      "feature": {
+        "outputPath": "apps/web/components/features/{domain}/{ComponentName}.tsx",
+        "signals": [
+          "Dashboard",
+          "Profile",
+          "Settings",
+          "Login",
+          "Signup",
+          "Form",
+          "Table",
+          "List",
+          "Grid",
+          "Chart",
+          "Stats",
+          "Analytics"
+        ],
+        "note": "Auth intentionally excluded \u2014 too broad; catches Flutter auth widgets like SocialAuthButton"
+      }
+    }
+  }
+}

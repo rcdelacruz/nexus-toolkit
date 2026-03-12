@@ -1,0 +1,7 @@
+{
+  "extends": "@project-name/config/typescript/react-library.json",
+  "compilerOptions": {
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src"]
+}

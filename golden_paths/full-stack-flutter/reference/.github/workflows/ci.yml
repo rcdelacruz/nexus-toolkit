@@ -1,0 +1,56 @@
+# GitHub Actions CI — uncomment after configuring your repository secrets.
+# Required secrets:
+#   NEXT_PUBLIC_SUPABASE_URL      — Supabase project URL
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY — Supabase anon key
+#   SUPABASE_SERVICE_ROLE_KEY     — Supabase service role key
+#   NEXT_PUBLIC_APP_URL           — Public URL (e.g. http://localhost:3000 for CI)
+#
+# name: CI
+#
+# on:
+#   push:
+#     branches: [main]
+#   pull_request:
+#     branches: [main]
+#
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.ref }}
+#   cancel-in-progress: true
+#
+# jobs:
+#   ci:
+#     name: Lint, Typecheck & Build (Web)
+#     runs-on: ubuntu-latest
+#     defaults:
+#       run:
+#         working-directory: apps/web
+#
+#     env:
+#       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+#       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+#       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+#       NEXT_PUBLIC_APP_URL: http://localhost:3000
+#
+#     steps:
+#       - uses: actions/checkout@v4
+#
+#       - uses: pnpm/action-setup@v4
+#         with:
+#           version: 9
+#
+#       - uses: actions/setup-node@v4
+#         with:
+#           node-version-file: .nvmrc
+#           cache: pnpm
+#
+#       - name: Install dependencies
+#         run: pnpm install --frozen-lockfile
+#
+#       - name: Lint
+#         run: pnpm lint
+#
+#       - name: Typecheck
+#         run: pnpm typecheck
+#
+#       - name: Build
+#         run: pnpm build

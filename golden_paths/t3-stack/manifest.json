@@ -1,0 +1,194 @@
+{
+  "name": "t3-stack",
+  "version": "2.0.0",
+  "description": "T3 Stack \u2014 Next.js 16 + tRPC v11 + Prisma v7 + NextAuth v5 + Zustand v5 + Tailwind v4 (src/ layout)",
+  "triggers": {
+    "hasAuth": [
+      "login",
+      "register",
+      "signin",
+      "signup",
+      "auth"
+    ],
+    "hasDashboard": [
+      "dashboard",
+      "admin",
+      "panel",
+      "analytics"
+    ],
+    "hasSidebar": [
+      "sidebar",
+      "drawer",
+      "navigation"
+    ],
+    "hasDataLists": [
+      "table",
+      "list",
+      "grid",
+      "users",
+      "orders"
+    ]
+  },
+  "routing": {
+    "strategy": "app-router",
+    "srcDir": "src/",
+    "asyncParams": true,
+    "groupKeywords": {
+      "(auth)": [
+        "login",
+        "register",
+        "signup",
+        "signin"
+      ],
+      "(dashboard)": [
+        "dashboard",
+        "admin",
+        "settings",
+        "profile"
+      ]
+    }
+  },
+  "tailwind": {
+    "version": 4,
+    "configFile": null,
+    "cssFile": "src/app/globals.css",
+    "tokenDirective": "@theme inline",
+    "animatePackage": "tw-animate-css"
+  },
+  "tokenTargets": [
+    "src/app/globals.css"
+  ],
+  "requiredFiles": [
+    "src/app/layout.tsx",
+    "src/app/globals.css",
+    "src/lib/utils.ts",
+    "src/lib/db.ts",
+    "src/instrumentation.ts",
+    "src/server/auth.ts",
+    "src/server/trpc.ts",
+    "src/server/api/root.ts",
+    "src/trpc/react.tsx",
+    "src/store/useAppStore.ts",
+    "prisma/schema.prisma",
+    "prisma/config.ts",
+    "next.config.ts",
+    "tsconfig.json",
+    "package.json",
+    ".env.example",
+    "Dockerfile",
+    "docker-compose.yml",
+    "README.md",
+    "postcss.config.mjs",
+    ".husky/pre-commit",
+    ".nvmrc",
+    "LICENSE",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    ".github/dependabot.yml",
+    ".github/PULL_REQUEST_TEMPLATE.md",
+    ".github/ISSUE_TEMPLATE/bug_report.md",
+    ".github/ISSUE_TEMPLATE/feature_request.md",
+    ".github/workflows/ci.yml",
+    "src/app/api/health/route.ts",
+    "src/app/error.tsx",
+    "src/app/not-found.tsx",
+    "src/app/global-error.tsx",
+    "src/lib/env.ts",
+    "src/lib/logger.ts",
+    "prisma/seed.ts",
+    "tests/setup.ts",
+    "tests/msw/handlers.ts",
+    "tests/msw/server.ts",
+    "vitest.config.ts",
+    "src/lib/csrf.ts",
+    "src/lib/sanitize.ts"
+  ],
+  "optionalFiles": {
+    "hasAuth": [
+      "src/app/(auth)/login/page.tsx",
+      "proxy.ts"
+    ],
+    "hasDashboard": [
+      "src/app/(dashboard)/layout.tsx",
+      "src/app/(dashboard)/dashboard/page.tsx"
+    ],
+    "hasSidebar": [
+      "src/components/layout/Sidebar.tsx",
+      "src/components/layout/DashboardLayout.tsx"
+    ]
+  },
+  "classification": {
+    "categories": {
+      "layout": {
+        "outputPath": "src/components/layout/{ComponentName}.tsx",
+        "signals": [
+          "Header",
+          "Footer",
+          "Sidebar",
+          "TopBar",
+          "DashboardLayout",
+          "Navigation",
+          "Navbar",
+          "Nav",
+          "Shell"
+        ]
+      },
+      "section": {
+        "outputPath": "src/components/sections/{ComponentName}.tsx",
+        "signals": [
+          "Hero",
+          "Features",
+          "Pricing",
+          "Testimonials",
+          "CTA",
+          "FAQ",
+          "About",
+          "Team",
+          "Banner"
+        ]
+      },
+      "ui": {
+        "outputPath": "src/components/ui/{ComponentName}.tsx",
+        "signals": [
+          "Button",
+          "Card",
+          "Badge",
+          "Input",
+          "Label",
+          "Avatar",
+          "Toast",
+          "Skeleton",
+          "Separator"
+        ]
+      },
+      "page": {
+        "outputPath": "src/app/{route}/page.tsx",
+        "signals": [
+          "Page",
+          "View",
+          "Screen",
+          "Route"
+        ],
+        "note": "outputPath is documentation only \u2014 App Router path is computed dynamically via ROUTE_MAP in the pipeline"
+      },
+      "feature": {
+        "outputPath": "src/components/features/{domain}/{ComponentName}.tsx",
+        "signals": [
+          "Dashboard",
+          "Profile",
+          "Settings",
+          "Auth",
+          "Login",
+          "Signup",
+          "Form",
+          "Table",
+          "List",
+          "Grid",
+          "Chart",
+          "Stats",
+          "Analytics"
+        ]
+      }
+    }
+  }
+}
