@@ -203,6 +203,7 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
             "--dangerously-skip-permissions",
             "--model", resolved_model,
             "--output-format", "stream-json",
+            "--verbose",
             "--system-prompt", system_prompt,
             user_message,
         ]
