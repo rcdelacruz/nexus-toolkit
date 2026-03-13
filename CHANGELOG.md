@@ -7,10 +7,14 @@ Versions correspond to the `nexus-toolkit` PyPI package.
 
 ---
 
-## [2.3.4] — 2026-03-13
+## [2.3.5] — 2026-03-13
 
 ### Added
 - **`nexus agent run --server`** — run any dev-workflow agent on a remote Nexus MCP server via HTTP instead of local `claude` CLI (e.g. `--server http://host:3900/mcp`)
+
+---
+
+## [2.3.4] — 2026-03-13
 
 ### Fixed
 - **`run_agent` model resolution** — `model` param is now optional; falls back to `NEXUS_DEFAULT_MODEL` env var, then `claude-sonnet-4-6`
