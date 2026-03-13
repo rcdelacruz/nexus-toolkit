@@ -9,8 +9,13 @@ Versions correspond to the `nexus-toolkit` PyPI package.
 
 ## [2.3.4] — 2026-03-13
 
+### Added
+- **`nexus agent run --server`** — run any dev-workflow agent on a remote Nexus MCP server via HTTP instead of local `claude` CLI (e.g. `--server http://host:3900/mcp`)
+
 ### Fixed
 - **`run_agent` model resolution** — `model` param is now optional; falls back to `NEXUS_DEFAULT_MODEL` env var, then `claude-sonnet-4-6`
+- **`run_agent` dual-mode** — detects `CLAUDECODE` env var; returns prompt-return for Claude Code sessions, runs subprocess for n8n/server callers
+- **`run_agent` stream-json** — added required `--verbose` flag when using `--output-format stream-json` with claude CLI
 
 ---
 
