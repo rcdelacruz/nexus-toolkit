@@ -1,3 +1,5 @@
+
+
 #!/usr/bin/env bash
 set -e
 
@@ -90,6 +92,8 @@ if [ ! -f "$NEXUS_BIN" ]; then
 fi
 
 ok "Installed successfully"
+
+
 
 # Clear shell command hash cache so the new binary is found immediately
 hash -r 2>/dev/null || true

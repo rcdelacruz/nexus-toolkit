@@ -1025,6 +1025,94 @@ def agent_list() -> None:
     console.print()
 
 
+# ── nexus agent run (remote helper) ──────────────────────────────────────────
+
+def _agent_run_remote(
+    server_url: str,
+    agent_name: str,
+    file_path: Optional[pathlib.Path],
+    context: Optional[str],
+    model: str,
+) -> None:
+    """Send run_agent to a remote Nexus MCP HTTP server and stream the findings."""
+    import sys as _sys
+    import urllib.request
+    import urllib.error
+
+    if context:
+        input_text = context
+        source_label = "inline context"
+    elif file_path and str(file_path) == "-":
+        input_text = _sys.stdin.read()
+        source_label = "stdin"
+    elif file_path:
+        if not file_path.exists():
+            console.print(f"[red]✗ File not found:[/red] {file_path}")
+            raise typer.Exit(1)
+        input_text = file_path.read_text(encoding="utf-8", errors="replace")
+        source_label = str(file_path)
+    else:
+        console.print("[red]✗ Provide a file path or --context string.[/red]")
+        raise typer.Exit(1)
+
+    meta = Table.grid(padding=(0, 2))
+    meta.add_column(style="dim white", min_width=12)
+    meta.add_column(style="white")
+    meta.add_row("agent", f"[cyan]{agent_name}[/cyan]")
+    meta.add_row("source", source_label)
+    meta.add_row("model", model)
+    meta.add_row("server", server_url)
+    console.print()
+    console.print(Panel(meta, title="[bold] nexus agent run [/bold]", box=box.ROUNDED, border_style="bright_black", padding=(0, 1)))
+    console.print()
+
+    payload = json.dumps({
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+            "name": "run_agent",
+            "arguments": {
+                "agent_name": agent_name,
+                "context": input_text,
+                "model": model,
+            },
+        },
+        "id": 1,
+    }).encode()
+
+    req = urllib.request.Request(
+        server_url,
+        data=payload,
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        method="POST",
+    )
+
+    console.print(Rule(agent_name, style="bright_black"))
+    console.print()
+
+    try:
+        with urllib.request.urlopen(req, timeout=300) as resp:
+            raw = resp.read().decode()
+    except urllib.error.URLError as exc:
+        console.print(f"[red]✗ Remote error:[/red] {exc}")
+        raise typer.Exit(1)
+
+    try:
+        data = json.loads(raw)
+        # MCP response: {"result": {"content": [{"type": "text", "text": "<json>"}]}}
+        result = data.get("result", {})
+        content = result.get("content", []) if isinstance(result, dict) else []
+        text = content[0].get("text", "") if content else raw
+        inner = json.loads(text) if text else {}
+        findings = inner.get("findings") or inner.get("error") or text or raw
+    except Exception:
+        findings = raw
+
+    console.print(findings)
+    console.print()
+    console.print(Rule(style="bright_black"))
+
+
 # ── nexus agent run ───────────────────────────────────────────────────────────
 
 
@@ -1051,10 +1139,17 @@ def agent_run(
     remember: Annotated[
         bool, typer.Option("--remember", help="Write findings back to memory after run.")
     ] = False,
+    server: Annotated[
+        Optional[str], typer.Option("--server", help="Remote Nexus MCP server URL (e.g. http://host:3900/mcp).")
+    ] = None,
 ) -> None:
     """Run a dev-workflow agent (e.g. code-reviewer, security) against a file or inline context."""
     import sys as _sys
     from tools.devsecops.memory import build_memory_context_block, update_memory
+
+    if server:
+        _agent_run_remote(server, agent_name, file_path, context, model)
+        return
 
     agent_file = _find_dev_agent(agent_name)
 
