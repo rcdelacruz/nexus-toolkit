@@ -6,7 +6,7 @@ Nexus is an enterprise dev toolkit with four integrated capabilities:
 
 | Capability | What it does |
 |------------|-------------|
-| **Design-to-Code Pipeline** | Turn a Figma export, text description, or existing codebase into production-ready code in your chosen stack — via golden path conventions and Claude-powered transformation |
+| **Design-to-Code Pipeline** | Turn a [Figma Make](https://www.figma.com/make) export, text description, or existing codebase into production-ready code in your chosen stack — via golden path conventions and Claude-powered transformation |
 | **Dev-Workflow Agents** | 22 specialized Claude agents covering every SDLC stage: code review, security, QA, deployment, architecture, database, monitoring, and more |
 | **Workflow Commands** | 11 multi-step orchestration workflows — design → implement → review → deploy → document |
 | **Hybrid Search & Read** | Web search and documentation-optimised reading for AI agents (`nexus_search`, `nexus_read`) |
@@ -81,7 +81,7 @@ flowchart TD
 
 The agent reads queue files one at a time, transforms each component, updates `04_file_tree.json`, deletes the queue file, and repeats until `05_queue/` is empty.
 
-The `Project components` list is the key guard: when generating a page or layout, the agent only imports components from this list — never reference boilerplate stubs (e.g. `Features.tsx`, `CTA.tsx`) that appear in the file tree but were not part of the Figma source.
+The `Project components` list is the key guard: when generating a page or layout, the agent only imports components from this list — never reference boilerplate stubs (e.g. `Features.tsx`, `CTA.tsx`) that appear in the file tree but were not part of the Figma Make source.
 
 | Golden Path | Stack |
 |-------------|-------|
@@ -131,85 +131,53 @@ Specialized Claude Code agents for every stage of the SDLC — code review, secu
 
 ---
 
-## Installation
+## Installation & Integration
 
-**Prerequisites:** Python 3.10+
+Pick the use case that matches what you want to do — each one is self-contained.
 
-### Option 1: One-liner (recommended)
+---
+
+### I want to generate code from a Figma Make export or prompt
+
+**Prerequisites:** Python 3.10+, [`claude` CLI](https://claude.ai/code) installed and authenticated
 
 ```bash
+# 1. Install nexus-toolkit
 curl -fsSL https://nexus.coderstudio.co/install.sh | bash
-```
+# or: pip install nexus-toolkit  /  uv tool install nexus-toolkit
 
-### Option 2: pip / uv
+# 2. Install and authenticate Claude Code (required for transform + agent commands)
+npm install -g @anthropic-ai/claude-code
+claude login
 
-```bash
-pip install nexus-toolkit
-# or
-uv tool install nexus-toolkit
-```
-
-### Option 3: Development install
-
-```bash
-git clone https://github.com/rcdelacruz/nexus-mcp.git
-cd nexus-mcp
-uv sync          # or: python3 -m venv .venv && source .venv/bin/activate && pip install -e .
-```
-
-### Server / n8n
-
-```bash
-uvx --reinstall nexus-toolkit
-systemctl --user restart nexus-sse
+# 3. Run
+nexus run prompt "A SaaS dashboard" --golden-path nextjs-fullstack --project-name my-app
+nexus run zip ~/Downloads/figma-export.zip --golden-path nextjs-fullstack --project-name my-app
 ```
 
 ---
 
-## Configuration
+### I want to use Nexus tools inside a Claude Code session
 
-### Claude Code (CLI)
-
-```bash
-# uvx (recommended)
-claude mcp add nexus -- uvx nexus-toolkit
-
-# local dev
-claude mcp add nexus --scope project -- \
-  $(pwd)/.venv/bin/python $(pwd)/nexus_server.py
-
-claude mcp list   # verify: nexus - ✓ Connected
-```
-
-### n8n (HTTP / streamable-http)
-
-Run the server in HTTP mode so n8n can reach it over the network:
+No separate install needed — `uvx` fetches the package on demand.
 
 ```bash
-# Development (dev install)
-MCP_TRANSPORT=http MCP_HOST=0.0.0.0 MCP_PORT=3900 \
-  .venv/bin/python nexus_server.py
+# Add the MCP server
+claude mcp add nexus -- uvx --refresh --from nexus-toolkit nexus-mcp
 
-# uvx
-MCP_TRANSPORT=http MCP_HOST=0.0.0.0 MCP_PORT=3900 \
-  uvx nexus-toolkit
+# Verify
+claude mcp list   # nexus ✓ Connected
 ```
 
-In n8n, set the MCP Client node **Endpoint URL** to:
-
-```
-http://<server-ip>:3900/mcp
-```
-
-> **Note:** The server binds to `0.0.0.0` so it is reachable from n8n on any interface.
-> `stateless_http` is enabled, so tool calls work without a prior MCP initialize handshake
-> (required for n8n SSH nodes that call the server directly via curl/HTTP).
+All 9 MCP tools are now available in every Claude Code session — pipeline tools (`ingest_figma_zip`, `remap_to_golden_path`, `validate_output`, …) and agent tools (`run_agent`, `list_agents`).
 
 ---
 
-### Claude Desktop / Cursor
+### I want to use Nexus in Claude Desktop or Cursor
 
-Config location:
+No separate install needed. Add one entry to your config file and restart the app.
+
+Config file location:
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
@@ -218,11 +186,77 @@ Config location:
   "mcpServers": {
     "nexus": {
       "command": "uvx",
-      "args": ["nexus-toolkit"]
+      "args": ["--refresh", "--from", "nexus-toolkit", "nexus-mcp"]
     }
   }
 }
 ```
+
+Nexus tools will appear in the tool picker after restart.
+
+---
+
+### I want to automate workflows with n8n
+
+Run Nexus as a persistent HTTP MCP server — your n8n instance calls its tools to automate code review, security scanning, QA gates, and more.
+
+```bash
+# Start in HTTP mode (uvx — no prior install needed)
+MCP_TRANSPORT=http MCP_HOST=0.0.0.0 MCP_PORT=3900 uvx --from nexus-toolkit nexus-mcp
+```
+
+In n8n, set the MCP Client node **Endpoint URL** to:
+
+```
+http://<server-ip>:3900/mcp
+```
+
+Nexus tools (`run_agent`, pipeline tools, `nexus_search`) are then callable from any n8n workflow node.
+
+---
+
+### Development install (contribute / modify)
+
+```bash
+git clone https://github.com/rcdelacruz/nexus-toolkit.git
+cd nexus-toolkit
+uv sync   # or: python3 -m venv .venv && source .venv/bin/activate && pip install -e .
+```
+
+---
+
+## Updating
+
+### Auto-update (recommended for uvx setups)
+
+Add `--refresh` to your uvx command once — Nexus checks PyPI on every startup and updates automatically when a new version is available.
+
+**Claude Code:**
+```bash
+claude mcp add nexus -- uvx --refresh --from nexus-toolkit nexus-mcp
+```
+
+**Claude Desktop / Cursor** — edit your config:
+```json
+{
+  "mcpServers": {
+    "nexus": {
+      "command": "uvx",
+      "args": ["--refresh", "--from", "nexus-toolkit", "nexus-mcp"]
+    }
+  }
+}
+```
+
+> `--refresh` adds ~1–2 seconds at startup while uvx checks PyPI. If no new version is available, it starts immediately.
+
+### Manual update
+
+| Integration | Command |
+|---|---|
+| **CLI** (pip / uv tool) | `pip install --upgrade nexus-toolkit` or `uv tool upgrade nexus-toolkit` |
+| **Claude Code / Desktop / Cursor** (uvx) | `uvx --reinstall --from nexus-toolkit nexus-mcp` then restart the app |
+| **n8n HTTP server** (persistent process) | `uvx --reinstall --from nexus-toolkit nexus-mcp` then restart the process |
 
 ---
 
@@ -415,7 +449,7 @@ Here is my Figma Make export as base64: <PASTE>
 Project name: dashboard-app, golden path: nextjs-fullstack
 ```
 
-#### Starting point B — Text description (no Figma file needed)
+#### Starting point B — Text description (no Figma Make file needed)
 
 ```
 Build a SaaS landing page with a hero section, features grid, pricing table,
@@ -539,7 +573,7 @@ Seeds the golden path reference boilerplate, classifies Figma/prompt/codebase fi
 Runs static analysis on the generated file tree before packaging. Checks for:
 - Missing required files (per `manifest.json`)
 - Broken `@/` imports
-- Leftover Figma artifacts (`React.FC`, bare `import React`, inline styles)
+- Leftover Figma Make artifacts (`React.FC`, bare `import React`, inline styles)
 - Missing `"use client"` on components that use hooks or event handlers
 - Default exports in `components/` (should be named exports)
 - `oklch()` color usage (must be `hsl()`)

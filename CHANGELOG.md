@@ -7,6 +7,29 @@ Versions correspond to the `nexus-toolkit` PyPI package.
 
 ---
 
+## [2.3.0] — 2026-03-13
+
+### Added
+- **Persistent agent memory** (`tools/devsecops/memory.py`) — file-based markdown memory for dev-workflow agents with two-layer team model:
+  - `personal/` (gitignored, per-developer) and `shared/` (git-committed, team-owned via PRs)
+  - Solo projects: flat `{memory_dir}/{agent_name}.md` (auto-detected)
+  - Auto-writes gitignore entry for `personal/` on first use — zero manual setup
+- **`run_agent` MCP tool** — new `memory_path` and `remember` parameters; past findings are injected as context before each run; findings are written back after run when `remember=True`
+- **`get_agent_memory` MCP tool** — reads the memory file for a named agent; returns merged shared + personal content
+- **`update_agent_memory` MCP tool** — writes or merges findings into agent memory; supports `append` (default), `replace`, and `reset` modes
+- **`nexus agent run`** CLI — new `--memory-path` and `--remember` flags; auto-detects project root when `--remember` is used without `--memory-path`
+- **Human-in-the-loop trigger detection** — deterministic keyword matching (no extra LLM calls) flags major decisions (migrate, breaking change, rewrite, deprecate, etc.) as `- [ ]` checkboxes in `⚠️ Pending Human Review`; ticking `- [x]` prevents re-flagging on future runs
+- **`tests/test_memory.py`** — 23 unit tests covering frontmatter parsing, trigger detection, deduplication, rolling window, mode behaviours, two-layer merge, and auto-gitignore
+
+### Fixed
+- **uvx entry point** — corrected all installation and update commands from `uvx nexus-toolkit` (which fails — no executable by that name) to `uvx --from nexus-toolkit nexus-mcp`. Affects Claude Code, Claude Desktop, Cursor, and n8n HTTP server setup instructions in README and docs.
+
+### Changed
+- `nexus_cli.py` version → 2.3.0; `public/index.html` and `public/docs.html` version badge → v2.3.0
+- `public/docs.html` — new **Agent Memory** section and **Updating** section; all uvx commands corrected
+
+---
+
 ## [2.2.0] — 2026-03-12
 
 ### Added

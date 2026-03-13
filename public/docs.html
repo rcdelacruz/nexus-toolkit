@@ -256,21 +256,27 @@
 
   <nav>
     <div class="nav-logo">NEXUS</div>
-    <div class="nav-version">v2.2.0</div>
+    <div class="nav-version">v2.3.0</div>
 
     <div class="nav-section">Getting Started</div>
     <a href="#overview">Overview</a>
     <a href="#prereqs">Prerequisites</a>
     <a href="#install">Installation</a>
+    <a href="#integration-cli" style="padding-left:1.5rem;font-size:0.72rem">→ CLI</a>
+    <a href="#integration-claude-code" style="padding-left:1.5rem;font-size:0.72rem">→ Claude Code</a>
+    <a href="#integration-desktop" style="padding-left:1.5rem;font-size:0.72rem">→ Claude Desktop / Cursor</a>
+    <a href="#integration-n8n" style="padding-left:1.5rem;font-size:0.72rem">→ n8n</a>
+    <a href="#updating">Updating</a>
     <a href="#quickstart">Quick Start</a>
 
     <div class="nav-section">Design-to-Code</div>
     <a href="#from-prompt">From a prompt</a>
-    <a href="#from-zip">From a Figma ZIP</a>
+    <a href="#from-zip">From a Figma Make ZIP</a>
     <a href="#from-codebase">From a codebase</a>
 
     <div class="nav-section">Dev Agents</div>
     <a href="#agents">Dev-workflow agents</a>
+    <a href="#agent-memory">Agent memory</a>
     <a href="#workflow-cmds">Workflow commands</a>
 
     <div class="nav-section">Reference</div>
@@ -280,7 +286,7 @@
 
     <div class="nav-section">Links</div>
     <a href="/">← Home</a>
-    <a href="https://github.com/rcdelacruz/nexus-mcp" target="_blank">GitHub</a>
+    <a href="https://github.com/rcdelacruz/nexus-toolkit" target="_blank">GitHub</a>
   </nav>
 
   <main>
@@ -313,7 +319,7 @@
       <tbody>
         <tr>
           <td><strong>Design-to-Code Pipeline</strong></td>
-          <td>Turns a Figma export, text description, or existing codebase into production-ready code in your chosen stack</td>
+          <td>Turns a <a href="https://www.figma.com/make" target="_blank" style="color:var(--cyan)">Figma Make</a> export, text description, or existing codebase into production-ready code in your chosen stack</td>
           <td><code>nexus run</code> · <code>nexus ingest</code> · <code>nexus remap</code> · <code>nexus transform</code> · <code>nexus validate</code> · <code>nexus package</code></td>
         </tr>
         <tr>
@@ -376,15 +382,154 @@
     </div>
 
     <!-- Install -->
-    <h2 id="install">Installation</h2>
+    <h2 id="install">Installation &amp; Integration</h2>
 
-    <h3>One-liner (recommended)</h3>
-    <pre><code><span class="prompt">$</span> <span class="cmd">curl</span> -fsSL https://nexus.coderstudio.co/install.sh | bash</code><button class="copy-btn" onclick="copy(this, 'curl -fsSL https://nexus.coderstudio.co/install.sh | bash')">copy</button></pre>
+    <p>Pick the use case that matches what you want to do — each one is self-contained.</p>
 
-    <h3>pip / uv</h3>
-    <pre><code><span class="prompt">$</span> <span class="cmd">pip install</span> nexus-toolkit
-<span class="comment"># or</span>
-<span class="prompt">$</span> <span class="cmd">uv tool install</span> nexus-toolkit</code></pre>
+    <!-- Use case 1: CLI -->
+    <h3 id="integration-cli">I want to generate code from a Figma Make export or prompt</h3>
+    <p>Install the <code>nexus</code> CLI and run the Design-to-Code pipeline from your terminal.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Install nexus-toolkit</div>
+          <pre style="margin-top:0.5rem"><code><span class="prompt">$</span> <span class="cmd">curl</span> -fsSL https://nexus.coderstudio.co/install.sh | bash</code><button class="copy-btn" onclick="copy(this, 'curl -fsSL https://nexus.coderstudio.co/install.sh | bash')">copy</button></pre>
+          <div class="step-desc" style="margin-top:0.5rem">Or: <code>pip install nexus-toolkit</code> / <code>uv tool install nexus-toolkit</code></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Install &amp; authenticate Claude Code</div>
+          <div class="step-desc">Required for the transform step and all agent/workflow commands.</div>
+          <pre style="margin-top:0.5rem"><code><span class="prompt">$</span> <span class="cmd">npm install -g</span> @anthropic-ai/claude-code
+<span class="prompt">$</span> <span class="cmd">claude login</span></code></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Run</div>
+          <pre style="margin-top:0.5rem"><code><span class="comment"># From a text prompt</span>
+<span class="prompt">$</span> <span class="cmd">nexus run prompt</span> <span class="str">"A SaaS dashboard"</span> -g nextjs-fullstack -p my-app
+
+<span class="comment"># From a Figma Make ZIP</span>
+<span class="prompt">$</span> <span class="cmd">nexus run zip</span> ~/Downloads/figma-export.zip -g nextjs-fullstack -p my-app</code><button class="copy-btn" onclick="copy(this, 'nexus run prompt \"A SaaS dashboard\" -g nextjs-fullstack -p my-app')">copy</button></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Use case 2: Claude Code -->
+    <h3 id="integration-claude-code">I want to use Nexus tools inside a Claude Code session</h3>
+    <p>Register Nexus as an MCP server — no separate install needed, <code>uvx</code> handles it on demand.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Add the MCP server</div>
+          <pre style="margin-top:0.5rem"><code><span class="prompt">$</span> <span class="cmd">claude mcp add</span> nexus -- uvx --refresh --from nexus-toolkit nexus-mcp</code><button class="copy-btn" onclick="copy(this, 'claude mcp add nexus -- uvx --refresh --from nexus-toolkit nexus-mcp')">copy</button></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Verify</div>
+          <pre style="margin-top:0.5rem"><code><span class="prompt">$</span> <span class="cmd">claude mcp list</span>   <span class="comment"># nexus ✓ Connected</span></code></pre>
+        </div>
+      </div>
+    </div>
+    <div class="callout">All 9 MCP tools are now available in every Claude Code session — pipeline tools (<code>ingest_figma_zip</code>, <code>remap_to_golden_path</code>, <code>validate_output</code>, …) and agent tools (<code>run_agent</code>, <code>list_agents</code>).</div>
+
+    <!-- Use case 3: Claude Desktop / Cursor -->
+    <h3 id="integration-desktop">I want to use Nexus in Claude Desktop or Cursor</h3>
+    <p>Add one entry to your app's config file — no separate install needed.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Edit your config file</div>
+          <div class="step-desc">macOS: <code>~/Library/Application Support/Claude/claude_desktop_config.json</code><br>Windows: <code>%APPDATA%\Claude\claude_desktop_config.json</code></div>
+          <pre style="margin-top:0.5rem"><code>{
+  "mcpServers": {
+    "nexus": {
+      "command": "uvx",
+      "args": ["--refresh", "--from", "nexus-toolkit", "nexus-mcp"]
+    }
+  }
+}</code><button class="copy-btn" onclick="copy(this, '{\"mcpServers\":{\"nexus\":{\"command\":\"uvx\",\"args\":[\"--refresh\",\"--from\",\"nexus-toolkit\",\"nexus-mcp\"]}}}')">copy</button></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Restart the app</div>
+          <div class="step-desc">Nexus tools will appear in the tool picker.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Use case 4: n8n -->
+    <h3 id="integration-n8n">I want to automate workflows with n8n</h3>
+    <p>Run Nexus as a persistent HTTP MCP server — your n8n instance calls its tools to automate code review, security scanning, QA gates, and more.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Start the server in HTTP mode</div>
+          <pre style="margin-top:0.5rem"><code><span class="prompt">$</span> <span class="cmd">MCP_TRANSPORT=http MCP_HOST=0.0.0.0 MCP_PORT=3900</span> uvx --from nexus-toolkit nexus-mcp</code><button class="copy-btn" onclick="copy(this, 'MCP_TRANSPORT=http MCP_HOST=0.0.0.0 MCP_PORT=3900 uvx --from nexus-toolkit nexus-mcp')">copy</button></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Point your n8n MCP Client node at it</div>
+          <pre style="margin-top:0.5rem"><code>http://&lt;server-ip&gt;:3900/mcp</code></pre>
+          <div class="step-desc" style="margin-top:0.5rem">Nexus tools (<code>run_agent</code>, pipeline tools, <code>nexus_search</code>) are then callable from any n8n workflow node.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Updating -->
+    <h2 id="updating">Updating</h2>
+
+    <h3>Auto-update (recommended for uvx setups)</h3>
+
+    <p>Add <code>--refresh</code> to your uvx command once — Nexus will check PyPI for a new version on every startup and update automatically if one is available. No manual steps after a release.</p>
+
+    <p><strong>Claude Code:</strong></p>
+    <pre><code><span class="prompt">$</span> <span class="cmd">claude mcp add</span> nexus -- uvx --refresh --from nexus-toolkit nexus-mcp</code><button class="copy-btn" onclick="copy(this, 'claude mcp add nexus -- uvx --refresh --from nexus-toolkit nexus-mcp')">copy</button></pre>
+
+    <p><strong>Claude Desktop / Cursor</strong> — edit your config file:</p>
+    <pre><code>{
+  "mcpServers": {
+    "nexus": {
+      "command": "uvx",
+      "args": ["--refresh", "--from", "nexus-toolkit", "nexus-mcp"]
+    }
+  }
+}</code><button class="copy-btn" onclick="copy(this, '{\"mcpServers\":{\"nexus\":{\"command\":\"uvx\",\"args\":[\"--refresh\",\"--from\",\"nexus-toolkit\",\"nexus-mcp\"]}}}')">copy</button></pre>
+
+    <div class="callout">
+      <code>--refresh</code> adds ~1–2 seconds to startup while uvx checks PyPI. When there is no new version, it skips the reinstall and starts immediately. When there is a new version, it reinstalls before starting.
+    </div>
+
+    <h3>Manual update</h3>
+
+    <table>
+      <thead>
+        <tr><th>Integration</th><th>Command</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>CLI</strong> (pip / uv tool)</td><td><code>pip install --upgrade nexus-toolkit</code> or <code>uv tool upgrade nexus-toolkit</code></td></tr>
+        <tr><td><strong>Claude Code / Desktop / Cursor</strong> (uvx)</td><td><code>uvx --reinstall --from nexus-toolkit nexus-mcp</code> then restart the app</td></tr>
+        <tr><td><strong>n8n HTTP server</strong> (persistent process)</td><td><code>uvx --reinstall --from nexus-toolkit nexus-mcp</code> then restart the process</td></tr>
+      </tbody>
+    </table>
 
     <!-- Quick Start -->
     <h2 id="quickstart">Quick Start</h2>
@@ -412,7 +557,7 @@
     <!-- From prompt -->
     <h2 id="from-prompt">Design-to-Code — from a text prompt</h2>
 
-    <p>No Figma? No problem. Describe what you want to build:</p>
+    <p>No <a href="https://www.figma.com/make" target="_blank" style="color:var(--cyan)">Figma Make</a> file? No problem. Describe what you want to build:</p>
 
     <pre><code><span class="prompt">$</span> <span class="cmd">nexus run prompt</span> <span class="str">"A landing page with hero, features grid, pricing, and footer"</span> \
     --golden-path nextjs-static \
@@ -420,9 +565,9 @@
     --output-dir ~/Desktop/</code><button class="copy-btn" onclick="copy(this, 'nexus run prompt \"A landing page with hero, features grid, pricing, and footer\" --golden-path nextjs-static --project-name my-landing --output-dir ~/Desktop/')">copy</button></pre>
 
     <!-- From ZIP -->
-    <h2 id="from-zip">Design-to-Code — from a Figma ZIP</h2>
+    <h2 id="from-zip">Design-to-Code — from a Figma Make ZIP</h2>
 
-    <p>Export your project from Figma Make, then run:</p>
+    <p>Export your project from <a href="https://www.figma.com/make" target="_blank" style="color:var(--cyan)">Figma Make</a>, then run:</p>
 
     <pre><code><span class="prompt">$</span> <span class="cmd">nexus run zip</span> ~/Downloads/figma-export.zip \
     --golden-path nextjs-fullstack \
@@ -480,6 +625,64 @@
     <div class="callout">
       Use <code>-</code> as the file argument to read from stdin. Use <code>--context</code> / <code>-c</code> to pass an inline string. If neither is provided, the agent runs without context (useful for general questions).
     </div>
+
+    <!-- Agent Memory -->
+    <h2 id="agent-memory">Agent Memory (v2.3.0)</h2>
+
+    <p>Agents are stateless by default — every run starts fresh. Enable persistent memory so agents accumulate project-specific knowledge over time, becoming smarter the more you use them.</p>
+
+    <h3>Enable memory for a run</h3>
+
+    <pre><code><span class="comment"># Run with memory — inject past findings as context</span>
+<span class="prompt">$</span> <span class="cmd">nexus agent run</span> code-reviewer src/api/auth.ts \
+    <span class="flag">--memory-path</span> .claude/memory/agents/
+
+<span class="comment"># Run and save findings back to memory</span>
+<span class="prompt">$</span> <span class="cmd">nexus agent run</span> code-reviewer src/api/auth.ts \
+    <span class="flag">--memory-path</span> .claude/memory/agents/ \
+    <span class="flag">--remember</span>
+
+<span class="comment"># Auto-detect project root (works if you're inside a git repo)</span>
+<span class="prompt">$</span> <span class="cmd">nexus agent run</span> security src/api/auth.ts <span class="flag">--remember</span></code><button class="copy-btn" onclick="copy(this, 'nexus agent run code-reviewer src/api/auth.ts --remember')">copy</button></pre>
+
+    <h3>Memory file layout</h3>
+
+    <p>Memory lives inside your project — not inside nexus-mcp:</p>
+
+    <pre><code>.claude/memory/agents/
+├── shared/           <span class="comment"># git-committed — team-owned, reviewed in PRs</span>
+│   └── code-reviewer.md
+└── personal/         <span class="comment"># gitignored automatically — per-developer</span>
+    └── code-reviewer.md</code></pre>
+
+    <p>The <code>personal/</code> directory is added to your project's <code>.gitignore</code> automatically on first write. Promote curated findings to <code>shared/</code> via a normal git commit when they're worth sharing with the team.</p>
+
+    <h3>Memory sections</h3>
+
+    <table>
+      <thead><tr><th>Section</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>Architecture Decisions</code></td><td>Significant patterns and design choices detected over time</td></tr>
+        <tr><td><code>Recurring Issues</code></td><td>Issues seen across multiple runs, with occurrence counts</td></tr>
+        <tr><td><code>Resolved</code></td><td>Previously flagged issues that have been fixed</td></tr>
+        <tr><td><code>Recent Findings</code></td><td>Rolling window of the last 3 run summaries</td></tr>
+        <tr><td><code>⚠️ Pending Human Review</code></td><td>Major decisions (migrations, breaking changes) flagged for review</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      Items in <strong>Pending Human Review</strong> use <code>- [ ]</code> checkboxes. Tick them to <code>- [x]</code> after acting — future runs skip already-reviewed items. Triggers are detected by keyword matching (migrate, breaking change, deprecate, rewrite, etc.) — no extra LLM calls.
+    </div>
+
+    <h3>MCP tools for memory</h3>
+
+    <pre><code><span class="comment">// Read agent memory</span>
+<span class="cmd">get_agent_memory</span>({ agent_name: "code-reviewer", memory_path: ".claude/memory/agents/" })
+
+<span class="comment">// Write / merge findings into memory</span>
+<span class="cmd">update_agent_memory</span>({ agent_name: "code-reviewer", memory_path: "...", content: "...", mode: "append" })
+
+<span class="comment">// Modes: append (default) | replace | reset</span></code><button class="copy-btn" onclick="copy(this, 'get_agent_memory')">copy</button></pre>
 
     <!-- Workflow Commands -->
     <h2 id="workflow-cmds">Workflow Commands</h2>

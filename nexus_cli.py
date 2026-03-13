@@ -99,7 +99,7 @@ _THEME = Theme({
 console = Console(theme=_THEME)
 
 
-_VERSION = "2.2.0"
+_VERSION = "2.3.0"
 
 _LOGO = """\
 [cyan]███╗   ██╗███████╗██╗  ██╗██╗   ██╗███████╗[/cyan]
@@ -1044,9 +1044,17 @@ def agent_run(
     claude_path: Annotated[
         Optional[str], typer.Option("--claude-path", help="Path to claude CLI.")
     ] = None,
+    memory_path: Annotated[
+        Optional[pathlib.Path],
+        typer.Option("--memory-path", help="Path to .claude/memory/agents/ for persistent agent memory."),
+    ] = None,
+    remember: Annotated[
+        bool, typer.Option("--remember", help="Write findings back to memory after run.")
+    ] = False,
 ) -> None:
     """Run a dev-workflow agent (e.g. code-reviewer, security) against a file or inline context."""
     import sys as _sys
+    from tools.devsecops.memory import build_memory_context_block, update_memory
 
     agent_file = _find_dev_agent(agent_name)
 
@@ -1066,14 +1074,36 @@ def agent_run(
         console.print("[red]✗ Provide a file path or --context string.[/red]")
         raise typer.Exit(1)
 
+    # Auto-detect memory_path from cwd if --remember given without --memory-path
+    resolved_memory_path: Optional[pathlib.Path] = memory_path
+    if remember and not resolved_memory_path:
+        candidate = pathlib.Path.cwd()
+        for _ in range(3):
+            if (candidate / ".git").exists() or (candidate / "package.json").exists():
+                resolved_memory_path = candidate / ".claude" / "memory" / "agents"
+                break
+            parent = candidate.parent
+            if parent == candidate:
+                break
+            candidate = parent
+
+    # Prepend past memory to input if memory path is available
+    if resolved_memory_path:
+        memory_block = build_memory_context_block(str(resolved_memory_path), agent_name)
+        if memory_block:
+            input_text = memory_block + "\n\n" + input_text
+
     claude_bin = _find_claude(claude_path)
 
     meta = Table.grid(padding=(0, 2))
-    meta.add_column(style="dim white", min_width=10)
+    meta.add_column(style="dim white", min_width=12)
     meta.add_column(style="white")
     meta.add_row("agent", f"[cyan]{agent_name}[/cyan]")
     meta.add_row("source", source_label)
     meta.add_row("model", model)
+    if resolved_memory_path:
+        mem_label = "on" if resolved_memory_path.exists() else "on (new)"
+        meta.add_row("memory", f"[dim]{mem_label}[/dim]  [dim white]{resolved_memory_path}[/dim white]")
     console.print()
     console.print(Panel(meta, title="[bold] nexus agent run [/bold]", box=box.ROUNDED, border_style="bright_black", padding=(0, 1)))
     console.print()
@@ -1089,8 +1119,24 @@ def agent_run(
 
     console.print(Rule(agent_name, style="bright_black"))
     console.print()
+    captured_output = ""
+    returncode = 0
     try:
-        result = subprocess.run(cmd, text=True, capture_output=False)
+        if resolved_memory_path and remember:
+            # Stream output to terminal while capturing for memory write
+            import io as _io
+            proc = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=None)
+            assert proc.stdout is not None
+            buf = _io.StringIO()
+            for line in proc.stdout:
+                print(line, end="", flush=True)
+                buf.write(line)
+            proc.wait()
+            captured_output = buf.getvalue().strip()
+            returncode = proc.returncode
+        else:
+            result = subprocess.run(cmd, text=True, capture_output=False)
+            returncode = result.returncode
     except KeyboardInterrupt:
         console.print()
         console.print(f"\n  [yellow]⚠[/yellow]  interrupted\n")
@@ -1098,9 +1144,19 @@ def agent_run(
 
     console.print()
     console.print(Rule(style="bright_black"))
-    if result.returncode != 0:
-        _step_error("agent run", f"claude exited with code {result.returncode}")
-        raise typer.Exit(result.returncode)
+    if returncode != 0:
+        _step_error("agent run", f"claude exited with code {returncode}")
+        raise typer.Exit(returncode)
+
+    # Write findings to memory
+    if resolved_memory_path and remember and captured_output:
+        _, pending_items = update_memory(str(resolved_memory_path), agent_name, captured_output)
+        console.print(f"  [green]●[/green]  memory updated  [dim]{resolved_memory_path}[/dim]")
+        if pending_items:
+            console.print(f"\n  [yellow]⚠[/yellow]  Pending human review:")
+            for item in pending_items:
+                console.print(f"    [yellow]•[/yellow] {item}")
+        console.print()
 
 
 # ── nexus workflow run ────────────────────────────────────────────────────────

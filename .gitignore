@@ -1,31 +1,73 @@
 # Python
 __pycache__/
 *.py[cod]
-*.egg-info/
-dist/
+*$py.class
+*.so
+.Python
 build/
-.venv/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+/lib/
+/lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
 *.egg
+MANIFEST
 
-# Pytest
-.pytest_cache/
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
 
-# Env
-.env
-.env.*
-
-# OS
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
 
-# Local Claude config
-.claude/settings.local.json
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
 
-# Local MCP config (has local paths)
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
+
+# MCP specific - local configs
 .mcp.json
+.claude/settings.json
+.claude/settings.local.json
+.claude.json
 
-# Wrangler
-.wrangler/
+# UV lock file (optional - uncomment to ignore)
+# uv.lock
 
-# Test artifacts
+# Reference boilerplate — never commit installed artifacts
+golden_paths/**/reference/node_modules/
+golden_paths/**/reference/pnpm-lock.yaml
+golden_paths/**/reference/.next/
+golden_paths/**/reference/dist/
+
+# test artifacts
 sample-portifolio/
 sample-portifolio.zip
+sample-portfolio/
+sample-portfolio.zip

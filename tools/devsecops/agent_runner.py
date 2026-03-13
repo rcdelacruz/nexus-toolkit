@@ -6,6 +6,8 @@ import shutil
 import subprocess
 from mcp.server.fastmcp import FastMCP
 
+from tools.devsecops.memory import build_memory_context_block, update_memory
+
 logger = logging.getLogger(__name__)
 
 _NEXUS_ROOT = pathlib.Path(__file__).parent.parent.parent
@@ -114,6 +116,8 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
         context: str,
         workflow: str = "",
         model: str = "claude-sonnet-4-6",
+        memory_path: str = "",
+        remember: bool = False,
     ) -> str:
         """
         Run a named dev-workflow agent against provided context using the claude CLI.
@@ -131,6 +135,10 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
             workflow: Optional workflow command name to prepend as instructions
                 (e.g. "workflow-review-code", "workflow-review-security")
             model: Claude model to use (default: claude-sonnet-4-6)
+            memory_path: Path to .claude/memory/agents/ directory in the target project.
+                When provided, past findings are injected as context before the run.
+            remember: When True, write findings back to memory after the run.
+                Requires memory_path. Writes to personal/ layer (team-safe).
         """
         try:
             system_prompt = _load_dev_agent(agent_name)
@@ -154,6 +162,12 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
                     f"---\n\n"
                     f"## Context to analyze:\n\n{context}"
                 )
+
+        # Prepend past memory if memory_path is provided
+        if memory_path:
+            memory_block = build_memory_context_block(memory_path, agent_name)
+            if memory_block:
+                user_message = memory_block + user_message
 
         cmd = [
             claude_bin,
@@ -179,15 +193,79 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
                 })
 
             findings = result.stdout.strip()
+
+            # Write findings back to memory if requested
+            pending_review: list[str] = []
+            memory_updated = False
+            if memory_path and remember:
+                memory_updated, pending_review = update_memory(memory_path, agent_name, findings)
+
             return json.dumps({
                 "agent": agent_name,
                 "workflow": workflow or None,
                 "findings": findings,
                 "model": model,
+                "memory_updated": memory_updated,
+                "pending_review": pending_review,
             })
 
         except subprocess.TimeoutExpired:
             return json.dumps({"error": "claude CLI timed out after 300s"})
         except Exception as exc:
             logger.error("run_agent error for '%s': %s", agent_name, exc)
+            return json.dumps({"error": str(exc)})
+
+    @mcp.tool()
+    async def get_agent_memory(
+        agent_name: str,
+        memory_path: str,
+    ) -> str:
+        """
+        Read the persistent memory file for a dev-workflow agent.
+
+        Args:
+            agent_name: Name of the agent (e.g. code-reviewer, security).
+            memory_path: Path to .claude/memory/agents/ in the target project.
+
+        Returns JSON with content and existence flag.
+        """
+        try:
+            from tools.devsecops.memory import read_memory
+            content = read_memory(memory_path, agent_name)
+            return json.dumps({
+                "agent": agent_name,
+                "memory_path": memory_path,
+                "content": content or "",
+                "exists": content is not None,
+            })
+        except Exception as exc:
+            return json.dumps({"error": str(exc)})
+
+    @mcp.tool()
+    async def update_agent_memory(
+        agent_name: str,
+        memory_path: str,
+        content: str,
+        mode: str = "append",
+    ) -> str:
+        """
+        Update the persistent memory file for a dev-workflow agent.
+
+        Args:
+            agent_name: Name of the agent.
+            memory_path: Path to .claude/memory/agents/ in the target project.
+            content: Findings text to merge into memory.
+            mode: "append" (default) | "replace" | "reset"
+
+        Returns JSON confirming the update and any pending review items flagged.
+        """
+        try:
+            ok, pending = update_memory(memory_path, agent_name, content, mode=mode)
+            return json.dumps({
+                "ok": ok,
+                "agent": agent_name,
+                "mode": mode,
+                "pending_review": pending,
+            })
+        except Exception as exc:
             return json.dumps({"error": str(exc)})
