@@ -7,6 +7,13 @@ Versions correspond to the `nexus-toolkit` PyPI package.
 
 ---
 
+## [2.3.3] — 2026-03-13
+
+### Fixed
+- **`run_agent` dual-mode**: detects `CLAUDECODE` env var — returns prompt-return for Claude Code sessions, runs subprocess for n8n/server (no `CLAUDECODE`)
+
+---
+
 ## [2.3.2] — 2026-03-13
 
 ### Changed

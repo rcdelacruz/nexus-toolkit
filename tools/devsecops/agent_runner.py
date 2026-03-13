@@ -1,5 +1,7 @@
+import asyncio
 import json
 import logging
+import os
 import pathlib
 import shutil
 from mcp.server.fastmcp import FastMCP
@@ -159,32 +161,123 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
                 )
 
         # Prepend past memory if memory_path is provided
-        memory_context = ""
         if memory_path:
             memory_block = build_memory_context_block(memory_path, agent_name)
             if memory_block:
-                memory_context = memory_block
                 user_message = memory_block + user_message
 
-        after_response = []
-        if remember and memory_path:
-            after_response.append(
-                f"Call update_agent_memory(agent_name='{agent_name}', "
-                f"memory_path='{memory_path}', content=<your findings>) to persist findings."
+        # Claude Code sets CLAUDECODE env var — subprocess is blocked there.
+        # Return prompt-return for Claude Code; run subprocess for n8n/server.
+        if os.environ.get("CLAUDECODE"):
+            after_response = []
+            if remember and memory_path:
+                after_response.append(
+                    f"Call update_agent_memory(agent_name='{agent_name}', "
+                    f"memory_path='{memory_path}', content=<your findings>) to persist findings."
+                )
+            return json.dumps({
+                "agent": agent_name,
+                "workflow": workflow or None,
+                "system_prompt": system_prompt,
+                "user_message": user_message,
+                "after_response": after_response,
+                "_instruction": (
+                    f"Adopt system_prompt as your persona and respond fully to user_message as the {agent_name} agent. "
+                    + (" ".join(after_response) if after_response else "")
+                ),
+            })
+
+        # Subprocess path — n8n, CLI callers, server (no CLAUDECODE env var)
+        claude_bin = _find_claude()
+        if not claude_bin:
+            return json.dumps({
+                "error": "claude CLI not found. Install Claude Code or ensure it is on PATH."
+            })
+
+        cmd = [
+            claude_bin,
+            "--print",
+            "--dangerously-skip-permissions",
+            "--model", model,
+            "--output-format", "stream-json",
+            "--system-prompt", system_prompt,
+            user_message,
+        ]
+
+        idle_timeout = 240
+
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdin=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
 
-        return json.dumps({
-            "agent": agent_name,
-            "workflow": workflow or None,
-            "system_prompt": system_prompt,
-            "user_message": user_message,
-            "has_memory_context": bool(memory_context),
-            "after_response": after_response,
-            "_instruction": (
-                f"Adopt system_prompt as your persona and respond fully to user_message as the {agent_name} agent. "
-                + (" ".join(after_response) if after_response else "")
-            ),
-        })
+            chunks: list[str] = []
+            assert proc.stdout is not None
+            assert proc.stderr is not None
+
+            while True:
+                try:
+                    chunk = await asyncio.wait_for(proc.stdout.read(4096), timeout=idle_timeout)
+                except asyncio.TimeoutError:
+                    stderr_on_timeout = ""
+                    try:
+                        stderr_on_timeout = (await asyncio.wait_for(proc.stderr.read(), timeout=2)).decode().strip()
+                    except Exception:
+                        pass
+                    proc.kill()
+                    await proc.wait()
+                    logger.error("run_agent: idle %ds agent=%s stderr=%s", idle_timeout, agent_name, stderr_on_timeout)
+                    return json.dumps({
+                        "error": f"Agent timed out after {idle_timeout}s of inactivity.",
+                        "stderr": stderr_on_timeout,
+                    })
+                if not chunk:
+                    break
+                chunks.append(chunk.decode())
+
+            await proc.wait()
+            stderr_text = (await proc.stderr.read()).decode().strip()
+
+            if proc.returncode != 0:
+                logger.error("claude CLI error agent=%s: %s", agent_name, stderr_text)
+                return json.dumps({
+                    "error": f"claude exited with code {proc.returncode}",
+                    "detail": stderr_text,
+                })
+
+            # Extract text from stream-json result event
+            findings = ""
+            for line in "".join(chunks).splitlines():
+                try:
+                    event = json.loads(line)
+                    if event.get("type") == "result":
+                        findings = event.get("result", "")
+                        break
+                except json.JSONDecodeError:
+                    continue
+            if not findings:
+                findings = "".join(chunks).strip()
+
+            pending_review: list[str] = []
+            memory_updated = False
+            if memory_path and remember:
+                memory_updated, pending_review = update_memory(memory_path, agent_name, findings)
+
+            return json.dumps({
+                "agent": agent_name,
+                "workflow": workflow or None,
+                "findings": findings,
+                "model": model,
+                "memory_updated": memory_updated,
+                "pending_review": pending_review,
+            })
+
+        except Exception as exc:
+            logger.error("run_agent error agent=%s: %s", agent_name, exc)
+            return json.dumps({"error": str(exc)})
 
     @mcp.tool()
     async def get_agent_memory(

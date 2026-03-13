@@ -256,7 +256,7 @@
 
   <nav>
     <div class="nav-logo">NEXUS</div>
-    <div class="nav-version">v2.3.2</div>
+    <div class="nav-version">v2.3.3</div>
 
     <div class="nav-section">Getting Started</div>
     <a href="#overview">Overview</a>
@@ -501,8 +501,9 @@
 
     <p>Add <code>--refresh</code> to your uvx command once — Nexus will check PyPI for a new version on every startup and update automatically if one is available. No manual steps after a release.</p>
 
-    <p><strong>Claude Code:</strong></p>
-    <pre><code><span class="prompt">$</span> <span class="cmd">claude mcp add</span> nexus -- uvx --refresh --from nexus-toolkit@latest nexus-mcp</code><button class="copy-btn" onclick="copy(this, 'claude mcp add nexus -- uvx --refresh --from nexus-toolkit@latest nexus-mcp')">copy</button></pre>
+    <p><strong>Claude Code:</strong> If you already added the server, remove it first then re-add with <code>@latest</code>:</p>
+    <pre><code><span class="prompt">$</span> <span class="cmd">claude mcp remove</span> nexus
+<span class="prompt">$</span> <span class="cmd">claude mcp add</span> nexus -- uvx --refresh --from nexus-toolkit@latest nexus-mcp</code><button class="copy-btn" onclick="copy(this, 'claude mcp remove nexus\nclaude mcp add nexus -- uvx --refresh --from nexus-toolkit@latest nexus-mcp')">copy</button></pre>
 
     <p><strong>Claude Desktop / Cursor</strong> — edit your config file:</p>
     <pre><code>{
@@ -627,7 +628,7 @@
     </div>
 
     <!-- Agent Memory -->
-    <h2 id="agent-memory">Agent Memory (v2.3.2)</h2>
+    <h2 id="agent-memory">Agent Memory (v2.3.3)</h2>
 
     <p>Agents are stateless by default — every run starts fresh. Enable persistent memory so agents accumulate project-specific knowledge over time, becoming smarter the more you use them.</p>
 
