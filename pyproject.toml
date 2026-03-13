@@ -1,6 +1,6 @@
 [project]
 name = "nexus-toolkit"
-version = "2.3.3"
+version = "2.3.4"
 description = "Hybrid search, retrieval, and Figma Make boilerplate generation MCP server"
 authors = [
     {name = "Ronald dela Cruz", email = "rcdelacruz@users.noreply.github.com"}

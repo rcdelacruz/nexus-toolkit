@@ -115,6 +115,7 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
         agent_name: str,
         context: str,
         workflow: str = "",
+        model: str = "",
         memory_path: str = "",
         remember: bool = False,
     ) -> str:
@@ -143,6 +144,8 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
             remember: When True, Claude Code must call update_agent_memory after responding
                 to persist findings. Requires memory_path.
         """
+        resolved_model = model or os.environ.get("NEXUS_DEFAULT_MODEL", "claude-sonnet-4-6")
+
         try:
             system_prompt = _load_dev_agent(agent_name)
         except FileNotFoundError as e:
@@ -198,7 +201,7 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
             claude_bin,
             "--print",
             "--dangerously-skip-permissions",
-            "--model", model,
+            "--model", resolved_model,
             "--output-format", "stream-json",
             "--system-prompt", system_prompt,
             user_message,
@@ -270,7 +273,7 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
                 "agent": agent_name,
                 "workflow": workflow or None,
                 "findings": findings,
-                "model": model,
+                "model": resolved_model,
                 "memory_updated": memory_updated,
                 "pending_review": pending_review,
             })

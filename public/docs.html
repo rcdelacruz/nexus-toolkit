@@ -256,7 +256,7 @@
 
   <nav>
     <div class="nav-logo">NEXUS</div>
-    <div class="nav-version">v2.3.3</div>
+    <div class="nav-version">v2.3.4</div>
 
     <div class="nav-section">Getting Started</div>
     <a href="#overview">Overview</a>
@@ -627,8 +627,18 @@
       Use <code>-</code> as the file argument to read from stdin. Use <code>--context</code> / <code>-c</code> to pass an inline string. If neither is provided, the agent runs without context (useful for general questions).
     </div>
 
+    <h3>Model selection</h3>
+
+    <p>By default, agents use <code>claude-sonnet-4-6</code>. Override per-run or set a global default:</p>
+
+    <pre><code><span class="comment"># Override model for a single run</span>
+<span class="prompt">$</span> <span class="cmd">nexus agent run</span> code-reviewer src/api/auth.ts <span class="flag">--model</span> claude-opus-4-6
+
+<span class="comment"># Set default model for all runs (add to ~/.zshrc or ~/.bashrc)</span>
+<span class="prompt">$</span> <span class="cmd">export</span> NEXUS_DEFAULT_MODEL=claude-opus-4-6</code><button class="copy-btn" onclick="copy(this, 'export NEXUS_DEFAULT_MODEL=claude-opus-4-6')">copy</button></pre>
+
     <!-- Agent Memory -->
-    <h2 id="agent-memory">Agent Memory (v2.3.3)</h2>
+    <h2 id="agent-memory">Agent Memory (v2.3.4)</h2>
 
     <p>Agents are stateless by default — every run starts fresh. Enable persistent memory so agents accumulate project-specific knowledge over time, becoming smarter the more you use them.</p>
 

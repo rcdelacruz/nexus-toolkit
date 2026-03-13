@@ -7,6 +7,13 @@ Versions correspond to the `nexus-toolkit` PyPI package.
 
 ---
 
+## [2.3.4] — 2026-03-13
+
+### Fixed
+- **`run_agent` model resolution** — `model` param is now optional; falls back to `NEXUS_DEFAULT_MODEL` env var, then `claude-sonnet-4-6`
+
+---
+
 ## [2.3.3] — 2026-03-13
 
 ### Fixed
