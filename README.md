@@ -163,7 +163,7 @@ No separate install needed — `uvx` fetches the package on demand.
 
 ```bash
 # Add the MCP server
-claude mcp add nexus -- uvx --refresh --from nexus-toolkit nexus-mcp
+claude mcp add nexus -- uvx --refresh --from nexus-toolkit@latest nexus-mcp
 
 # Verify
 claude mcp list   # nexus ✓ Connected
@@ -233,7 +233,7 @@ Add `--refresh` to your uvx command once — Nexus checks PyPI on every startup 
 
 **Claude Code:**
 ```bash
-claude mcp add nexus -- uvx --refresh --from nexus-toolkit nexus-mcp
+claude mcp add nexus -- uvx --refresh --from nexus-toolkit@latest nexus-mcp
 ```
 
 **Claude Desktop / Cursor** — edit your config:
