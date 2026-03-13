@@ -637,6 +637,21 @@
 <span class="comment"># Set default model for all runs (add to ~/.zshrc or ~/.bashrc)</span>
 <span class="prompt">$</span> <span class="cmd">export</span> NEXUS_DEFAULT_MODEL=claude-opus-4-6</code><button class="copy-btn" onclick="copy(this, 'export NEXUS_DEFAULT_MODEL=claude-opus-4-6')">copy</button></pre>
 
+    <h3>Remote server</h3>
+
+    <p>Run an agent on a remote Nexus MCP server (e.g. a shared team server) instead of the local <code>claude</code> CLI:</p>
+
+    <pre><code><span class="comment"># Run code-reviewer on remote server</span>
+<span class="prompt">$</span> <span class="cmd">nexus agent run</span> code-reviewer src/api/routes.ts \
+    <span class="flag">--server</span> http://your-server:3900/mcp
+
+<span class="comment"># Inline context</span>
+<span class="prompt">$</span> <span class="cmd">nexus agent run</span> product-manager \
+    <span class="flag">--context</span> <span class="str">"Create a PRD for user auth with OAuth2"</span> \
+    <span class="flag">--server</span> http://your-server:3900/mcp</code><button class="copy-btn" onclick="copy(this, 'nexus agent run code-reviewer src/api/routes.ts --server http://your-server:3900/mcp')">copy</button></pre>
+
+    <p>When <code>--server</code> is used, the local <code>claude</code> CLI is not required — the agent runs entirely on the remote server.</p>
+
     <!-- Agent Memory -->
     <h2 id="agent-memory">Agent Memory (v2.3.4)</h2>
 
@@ -808,6 +823,9 @@
         <tr><td colspan="4" style="background:var(--surface2);color:var(--cyan);font-size:0.65rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.5rem 0.75rem;">nexus agent run · nexus workflow run</td></tr>
         <tr><td><code>--context</code></td><td><code>-c</code></td><td>—</td><td>Inline context string instead of a file</td></tr>
         <tr><td><code>--model</code></td><td><code>-m</code></td><td><code>claude-sonnet-4-6</code></td><td>Claude model to use</td></tr>
+        <tr><td><code>--server</code></td><td>—</td><td>—</td><td>Remote Nexus MCP server URL (e.g. <code>http://host:3900/mcp</code>). Skips local claude CLI.</td></tr>
+        <tr><td><code>--memory-path</code></td><td>—</td><td>—</td><td>Path to <code>.claude/memory/agents/</code> for persistent memory</td></tr>
+        <tr><td><code>--remember</code></td><td>—</td><td>—</td><td>Write findings back to memory after run</td></tr>
         <tr><td><code>--claude-path</code></td><td>—</td><td>auto-detect</td><td>Explicit path to claude CLI binary</td></tr>
       </tbody>
     </table>
