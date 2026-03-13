@@ -1,3 +1,4 @@
+import importlib.metadata
 import logging
 import os
 import sys
@@ -5,6 +6,11 @@ from mcp.server.fastmcp import FastMCP
 from tools.search import register_search_tools
 from tools.figma import register_figma_tools
 from tools.devsecops import register_devsecops_tools
+
+try:
+    _VERSION = importlib.metadata.version("nexus-toolkit")
+except importlib.metadata.PackageNotFoundError:
+    _VERSION = "dev"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,6 +40,14 @@ mcp = FastMCP(
 register_search_tools(mcp)
 register_figma_tools(mcp)
 register_devsecops_tools(mcp)
+
+
+@mcp.tool()
+def get_version() -> str:
+    """Return the running nexus-toolkit version."""
+    return _VERSION
+
+
 logger.info("Nexus MCP server initialized")
 
 

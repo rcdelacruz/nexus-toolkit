@@ -3,7 +3,6 @@ import json
 import logging
 import pathlib
 import shutil
-import subprocess
 from mcp.server.fastmcp import FastMCP
 
 from tools.devsecops.memory import build_memory_context_block, update_memory
@@ -178,21 +177,53 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
             user_message,
         ]
 
+        # Idle timeout: if the process produces no output for this many seconds
+        # it is considered stuck. Active generation keeps resetting the timer,
+        # so a lengthy-but-healthy run is never killed prematurely.
+        idle_timeout = 240  # seconds — generous for agents like product-manager that think before writing
+
         try:
-            loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(
-                None,
-                lambda: subprocess.run(cmd, capture_output=True, text=True, timeout=300),
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
 
-            if result.returncode != 0:
-                logger.error("claude CLI error for agent '%s': %s", agent_name, result.stderr)
+            chunks: list[str] = []
+            assert proc.stdout is not None
+            while True:
+                try:
+                    chunk = await asyncio.wait_for(proc.stdout.read(4096), timeout=idle_timeout)
+                except asyncio.TimeoutError:
+                    proc.kill()
+                    await proc.wait()
+                    logger.error(
+                        "run_agent: claude CLI idle for %ds with no output (agent=%s)",
+                        idle_timeout, agent_name,
+                    )
+                    return json.dumps({
+                        "error": (
+                            f"The run_agent call timed out after {idle_timeout}s of inactivity. "
+                            "The agent uses the claude CLI under the hood to run, and it produced "
+                            "no output during that window. This could be due to the agent taking "
+                            "too long to respond, or an issue with the underlying claude CLI invocation."
+                        )
+                    })
+                if not chunk:
+                    break  # EOF — process finished
+                chunks.append(chunk.decode())
+
+            await proc.wait()
+            stderr_text = (await proc.stderr.read()).decode().strip()
+
+            if proc.returncode != 0:
+                logger.error("claude CLI error for agent '%s': %s", agent_name, stderr_text)
                 return json.dumps({
-                    "error": f"claude exited with code {result.returncode}",
-                    "detail": result.stderr.strip(),
+                    "error": f"claude exited with code {proc.returncode}",
+                    "detail": stderr_text,
                 })
 
-            findings = result.stdout.strip()
+            findings = "".join(chunks).strip()
 
             # Write findings back to memory if requested
             pending_review: list[str] = []
@@ -209,8 +240,6 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
                 "pending_review": pending_review,
             })
 
-        except subprocess.TimeoutExpired:
-            return json.dumps({"error": "claude CLI timed out after 300s"})
         except Exception as exc:
             logger.error("run_agent error for '%s': %s", agent_name, exc)
             return json.dumps({"error": str(exc)})

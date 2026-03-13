@@ -7,6 +7,16 @@ Versions correspond to the `nexus-toolkit` PyPI package.
 
 ---
 
+## [2.3.1] — 2026-03-13
+
+### Added
+- **`get_version` MCP tool** — MCP clients can now query the running `nexus-toolkit` version at runtime via `get_version()`
+
+### Fixed
+- **`run_agent` idle timeout** — replaced hard 300s wall-clock timeout with a 240s idle timeout; active LLM generation resets the timer so long-running agents (e.g. `product-manager`) are never killed prematurely
+
+---
+
 ## [2.3.0] — 2026-03-13
 
 ### Added
