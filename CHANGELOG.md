@@ -7,6 +7,13 @@ Versions correspond to the `nexus-toolkit` PyPI package.
 
 ---
 
+## [2.3.2] — 2026-03-13
+
+### Changed
+- **`run_agent` MCP tool** — no longer spawns a claude CLI subprocess; instead returns `system_prompt` + `user_message` for the current Claude Code session to apply directly, eliminating all timeout issues
+
+---
+
 ## [2.3.1] — 2026-03-13
 
 ### Added
