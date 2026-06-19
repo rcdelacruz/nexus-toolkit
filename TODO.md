@@ -110,7 +110,7 @@ Currently `noTailwindConfig` and `noOklch` are unconditional in `validate.py`.
 - [ ] `tools/figma/remap.py`
 - [ ] `tools/figma/validate.py`
 
-**Manifests:**
+**Manifests (existing):**
 - [ ] `nextjs-fullstack/manifest.json`
 - [ ] `nextjs-static/manifest.json`
 - [ ] `t3-stack/manifest.json`
@@ -118,6 +118,27 @@ Currently `noTailwindConfig` and `noOklch` are unconditional in `validate.py`.
 - [ ] `monorepo/manifest.json`
 - [ ] `full-stack-rn/manifest.json`
 - [ ] `full-stack-flutter/manifest.json`
+
+**Manifests (new golden paths — to be created):**
+- [ ] `nestjs-microservice/manifest.json`
+- [ ] `fastify-microservice/manifest.json`
+- [ ] `java-springboot/manifest.json`
+- [ ] `python-django/manifest.json`
+- [ ] `svelte-fullstack/manifest.json`
+- [ ] `tanstack/manifest.json`
+- [ ] `terraform-aws/manifest.json`
+- [ ] `terraform-gcp/manifest.json`
+- [ ] `pulumi/manifest.json`
+- [ ] `cdk-aws/manifest.json`
+- [ ] `dbt-postgres/manifest.json`
+- [ ] `airflow-pipeline/manifest.json`
+- [ ] `pyspark/manifest.json`
+- [ ] `fastapi-data-api/manifest.json`
+- [ ] `langchain-python/manifest.json`
+- [ ] `fastapi-ml/manifest.json`
+- [ ] `llamaindex/manifest.json`
+- [ ] `mcp-server-python/manifest.json`
+- [ ] `mcp-server-ts/manifest.json`
 
 ---
 
@@ -178,3 +199,36 @@ nexus ds weekly-audit               # DS-6
 - [ ] DS-6: SSH repo clone + consolidated multi-repo report
 - [ ] Google Chat webhook integration (direct, not via n8n)
 - [ ] PostgreSQL logging integration (direct)
+
+---
+
+## New Golden Paths
+
+Add support for the following golden paths. Each requires: reference boilerplate, `manifest.json`, agent markdown (`tools/agents/{gp}.md`), and golden path agent (`tools/dev-agents/` if needed).
+
+**Backend / Fullstack**
+- [ ] `nestjs-microservice` — NestJS + TypeScript microservice (REST/gRPC, class-validator, TypeORM/Prisma)
+- [ ] `fastify-microservice` — Fastify + TypeScript microservice (schema validation, Drizzle/Prisma, OpenAPI)
+- [ ] `java-springboot` — Spring Boot 3 + Java 21 (REST API, Spring Data JPA, Maven/Gradle)
+- [ ] `python-django` — Django 5 + DRF (REST API, PostgreSQL, Celery)
+- [ ] `svelte-fullstack` — SvelteKit + TypeScript (App Router, Drizzle, Tailwind)
+- [ ] `tanstack` — TanStack Start + TypeScript (file-based routing, TanStack Query, Vinxi)
+
+**Cloud Engineers**
+- [ ] `terraform-aws` — Terraform + AWS (modules, remote state, VPC, ECS/EKS, RDS)
+- [ ] `terraform-gcp` — Terraform + GCP (GKE, Cloud Run, Cloud SQL)
+- [ ] `pulumi` — Pulumi + TypeScript/Python (multi-cloud)
+- [ ] `cdk-aws` — AWS CDK + TypeScript (constructs, stacks, pipelines)
+
+**Data Engineers**
+- [ ] `dbt-postgres` — dbt + PostgreSQL (models, tests, seeds, snapshots)
+- [ ] `airflow-pipeline` — Apache Airflow (DAGs, operators, hooks, sensors)
+- [ ] `pyspark` — PySpark + Python (batch processing, Delta Lake)
+- [ ] `fastapi-data-api` — FastAPI + Python (data API, SQLAlchemy, Pydantic, async)
+
+**AI Engineers**
+- [ ] `langchain-python` — LangChain + Python (RAG, agents, chains, vector stores)
+- [ ] `fastapi-ml` — FastAPI + Python (ML model serving, async inference)
+- [ ] `llamaindex` — LlamaIndex + Python (RAG pipelines, document indexing)
+- [ ] `mcp-server-python` — MCP server in Python (FastMCP, custom tools, resources)
+- [ ] `mcp-server-ts` — MCP server in TypeScript (MCP SDK, custom tools, resources)

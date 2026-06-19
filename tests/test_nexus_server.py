@@ -176,7 +176,8 @@ class TestNexusRead:
         mock_response.status_code = 200
         mock_response.raise_for_status = Mock()
 
-        with patch('httpx.AsyncClient') as mock_client:
+        with patch('httpx.AsyncClient') as mock_client, \
+             patch('tools.search._is_private_host', return_value=False):
             mock_client_instance = AsyncMock()
             mock_client_instance.get = AsyncMock(return_value=mock_response)
             mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
@@ -230,7 +231,8 @@ class TestNexusRead:
         mock_response.status_code = 200
         mock_response.raise_for_status = Mock()
 
-        with patch('httpx.AsyncClient') as mock_client:
+        with patch('httpx.AsyncClient') as mock_client, \
+             patch('tools.search._is_private_host', return_value=False):
             mock_client_instance = AsyncMock()
             mock_client_instance.get = AsyncMock(return_value=mock_response)
             mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)

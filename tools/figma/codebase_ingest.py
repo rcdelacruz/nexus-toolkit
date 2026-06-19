@@ -22,6 +22,7 @@ remap_to_golden_path, validate_output, and package_output are unchanged.
 import json
 import logging
 import pathlib
+import re
 import shutil
 
 from mcp.server.fastmcp import FastMCP
@@ -177,7 +178,7 @@ def register_codebase_ingest_tool(mcp: FastMCP) -> None:
                 )
             })
 
-        resolved_project_name = project_name.strip() or root.name
+        resolved_project_name = re.sub(r"[^a-zA-Z0-9_-]", "-", project_name.strip() or root.name)
 
         # ── Walk the source directory ─────────────────────────────────────────
         components: list = []

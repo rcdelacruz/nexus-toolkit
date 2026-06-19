@@ -154,7 +154,7 @@ class TestIngestFigmaZip:
 
     @pytest.mark.asyncio
     async def test_all_golden_paths_accepted(self):
-        for path in ["nextjs-fullstack", "nextjs-static", "t3-stack", "vite-spa", "monorepo", "full-stack-rn"]:
+        for path in ["nextjs-fullstack", "nextjs-static", "t3-stack", "vite-spa", "monorepo", "full-stack-rn", "full-stack-flutter"]:
             result = json.loads(await self.tool(SAMPLE_ZIP_B64, golden_path=path))
             assert "error" not in result, f"Failed for golden_path={path}"
 
@@ -446,7 +446,7 @@ class TestUpdateFileInTree:
 
 # ── ingest_from_prompt tests ──────────────────────────────────────────────────
 
-from tools.figma.prompt_ingest import register_prompt_ingest_tool, _infer_components, _hint_for
+from tools.figma.prompt_ingest import register_prompt_ingest_tool
 
 
 _prompt_ingest = _extract_tool(register_prompt_ingest_tool)
@@ -489,6 +489,8 @@ class TestIngestFromPrompt:
             description="A landing page with a hero section and footer",
             golden_path="nextjs-static",
             project_name="test-infer",
+            pages=["LandingPage"],
+            components=["HeroSection", "Footer"],
         ))
         assert result["summary"]["components"] + result["summary"]["pages"] > 0
         assert result["total_files"] > 0
@@ -519,13 +521,16 @@ class TestIngestFromPrompt:
 
     @pytest.mark.asyncio
     async def test_scaffold_fallback_creates_one_page(self):
-        """With no matching signals, should fall back to a single HomePage."""
+        """With explicit page provided, total_files should reflect it."""
         result = json.loads(await _prompt_ingest(
             description="scaffold a clean project",
             golden_path="nextjs-fullstack",
             project_name="test-scaffold",
+            pages=["HomePage"],
+            components=[],
         ))
         assert result["total_files"] >= 1
+        assert result["summary"]["pages"] == 1
 
     @pytest.mark.asyncio
     async def test_writes_cache_file(self, tmp_path):
@@ -539,47 +544,6 @@ class TestIngestFromPrompt:
         manifest = json.loads(cache.read_text())
         assert manifest["source_type"] == "prompt"
         assert manifest["golden_path"] == "nextjs-static"
-
-
-class TestInferComponents:
-
-    def test_landing_page_infers_home_page(self):
-        pages, _ = _infer_components("A landing page for our product")
-        assert "HomePage" in pages
-
-    def test_dashboard_inferred(self):
-        pages, _ = _infer_components("An admin dashboard with charts")
-        assert "DashboardPage" in pages
-
-    def test_hero_inferred_as_component(self):
-        _, components = _infer_components("A site with a big hero section")
-        assert "HeroSection" in components
-
-    def test_footer_inferred_as_component(self):
-        _, components = _infer_components("Include a footer with links")
-        assert "Footer" in components
-
-    def test_no_signals_returns_fallback(self):
-        pages, components = _infer_components("scaffold a clean project")
-        assert pages == ["HomePage"]
-        assert components == []
-
-    def test_no_duplicates(self):
-        pages, components = _infer_components(
-            "A landing page homepage with a hero and hero banner"
-        )
-        all_names = pages + components
-        assert len(all_names) == len(set(all_names))
-
-
-class TestHintFor:
-
-    def test_known_stem_returns_hint(self):
-        assert "hero" in _hint_for("HeroSection").lower()
-
-    def test_unknown_stem_returns_default(self):
-        hint = _hint_for("WeirdComponentXYZ")
-        assert len(hint) > 0  # returns _DEFAULT_HINT, not empty
 
 
 # ── ingest_from_codebase tests ────────────────────────────────────────────────

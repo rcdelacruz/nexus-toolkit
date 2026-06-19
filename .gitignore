@@ -71,3 +71,6 @@ sample-portifolio/
 sample-portifolio.zip
 sample-portfolio/
 sample-portfolio.zip
+
+# nexus agent personal memory (per-developer, not shared)
+.claude/memory/agents/personal/

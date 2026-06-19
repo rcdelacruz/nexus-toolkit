@@ -17,9 +17,12 @@ context takes precedence when merged into the context block.
 
 from __future__ import annotations
 
+import logging
 import pathlib
 import re
 from datetime import date
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -50,29 +53,6 @@ _REVIEW_TRIGGERS: list[str] = [
 ]
 
 _FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
-
-_BLANK_TEMPLATE = """\
----
-name: {agent_name} memory
-description: Persistent findings from {agent_name} for this project
-type: agent-memory
-agent: {agent_name}
-project: {project_name}
-created: {today}
-last_updated: {today}
-run_count: 0
----
-
-## Architecture Decisions
-
-## Recurring Issues
-
-## Resolved
-
-## Recent Findings
-
-## ⚠️ Pending Human Review
-"""
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -238,7 +218,8 @@ def read_memory(memory_dir: str, agent_name: str) -> str | None:
         if personal.exists():
             parts.append(personal.read_text(encoding="utf-8"))
         return "\n\n".join(parts) if parts else None
-    except Exception:
+    except Exception as exc:
+        logger.exception("read_memory failed for agent=%s memory_dir=%s: %s", agent_name, memory_dir, exc)
         return None
 
 
@@ -405,6 +386,7 @@ def update_memory(
         return True, new_pending
 
     except Exception as exc:
+        logger.exception("update_memory failed for agent=%s memory_dir=%s: %s", agent_name, memory_dir, exc)
         return False, []
 
 
@@ -441,7 +423,8 @@ def build_memory_context_block(memory_dir: str, agent_name: str) -> str:
             f"---\n\n"
             f"(End of past memory — analyze the current context below)\n\n"
         )
-    except Exception:
+    except Exception as exc:
+        logger.exception("build_memory_context_block failed for agent=%s memory_dir=%s: %s", agent_name, memory_dir, exc)
         return ""
 
 

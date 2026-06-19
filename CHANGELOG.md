@@ -7,10 +7,84 @@ Versions correspond to the `nexus-toolkit` PyPI package.
 
 ---
 
+## [2.3.8] — 2026-06-19
+
+### Added
+- **`nexus agent run --github owner/repo`** — downloads a GitHub repo as a ZIP (no clone needed), extracts to a temp dir, and passes it to any agent via `--add-dir`; full URL and `.git` suffix accepted; set `GITHUB_TOKEN`/`GH_TOKEN` for private repos; temp dir cleaned up automatically after run
+- **Scoped context discovery for all 6 reviewer agents** — single-file reviews skip the file tree scan and representative file sampling (Steps 3–4); full-repo/`--github` reviews still do full discovery; stdin/diff reviews do stack identification only
+- **Memory-cached context discovery for all 6 reviewer agents** — agents emit a `## Repo Context` block as the first section of every response; on runs with `--remember`, this block is injected from memory and Step 1 is skipped entirely — discovery cost paid once per project, not per file
+- **Mandatory repo context discovery for all reviewer agents** — `database`, `security`, `deployment`, `monitoring`, and `performance` agents now all perform a Step 1 discovery phase before any review: reads runtime/framework, finds existing tooling, samples structure, and adapts recommendations to the actual stack instead of assuming Next.js/Vercel
+- **`/health` endpoint** — `GET /health` returns `{"status": "ok", "version": "..."}` on the MCP server
+- **Structured JSON logging** — server emits newline-delimited JSON logs; level controlled via `LOG_LEVEL` env var
+- **Tests in CI** — `pytest tests/ -q` now runs in `publish.yml` before PyPI publish
+- **`.env.example`** — documents all runtime env vars (`MCP_HOST`, `MCP_PORT`, `MCP_TRANSPORT`, `LOG_LEVEL`, `N8N_HOST`, `N8N_API_KEY`, `NEXUS_DEFAULT_MODEL`)
+- **`wrangler.toml`** — Cloudflare Pages config committed to repo
+
+### Fixed
+- **SSRF** — `nexus_read` blocks private/loopback/link-local/reserved IPs via `socket.getaddrinfo`; `socket.getaddrinfo` offloaded to thread pool via `asyncio.to_thread` to avoid blocking the event loop; `follow_redirects=False`
+- **Zip Slip** — ZIP ingestion rejects entries with `..` path components and absolute paths (e.g. `/etc/passwd`)
+- **Path traversal** — `project_name` sanitized via `re.sub` before use in `/tmp/nexus-*` paths across all ingest/remap/package tools
+- **`_VERSION` fallback** — changed from stale hardcoded string to `"dev"` in `nexus_cli.py`
+
+### Improved
+- **`lru_cache` on hot-path loaders** — `_load_dev_agent`, `_load_golden_path_meta`, `_load_reference_files` now cached; eliminates redundant disk reads on repeated calls
+- **`asyncio.to_thread` for search** — DuckDuckGo search no longer blocks the event loop
+- **`nexus_read` memory** — `output.extend(lines)` replaces intermediate string join in general mode
+
+### Tests
+- Fixed 2 SSRF tests that used non-resolvable hostnames — now patch `_is_private_host`
+- Added `tests/test_agent_runner.py` — covers Claude Code mode and subprocess branch
+- 211 tests total, all passing
+
+---
+
+## [2.3.6] — 2026-06-19
+
+### Fixed
+- **Path traversal** — `project_name` sanitized via `re.sub` before use in `/tmp/nexus-*` paths
+- **Production assert guards** — replaced `assert proc.stdout` with explicit guards
+- **Silent exceptions** — added `logger.exception()` to all bare `except` blocks in `memory.py`
+- **CLI startup latency** — `_check_update()` now runs in a background thread
+- **Step labels** — pipeline shows `4/5` (validate) and `5/5` (package)
+- **`_find_workflow` crash** — returns `[]` cleanly when `.claude/commands/` is absent
+- **`stream-json` parsing** — result field extraction falls back to `content`/`text` if `result` absent
+- **Package instructions** — `package_output` now emits golden-path-aware run commands
+- **`_VERSION`** — now read dynamically from `importlib.metadata` instead of hardcoded string
+- **Dead code** — removed `_BLANK_TEMPLATE`, dead block in `_print_errors`, redundant imports
+- **Non-deterministic agent fallback** — `rglob` results sorted before first match in `_find_dev_agent`
+- **Runtime imports** — moved module-level imports out of function bodies in `package.py` and `remap.py`
+
+### Improved
+- **`code-reviewer` agent** — mandatory repo context discovery before reviewing
+
+### Tests
+- Fixed 2 broken tests (`test_infers_components_from_description`, `test_scaffold_fallback_creates_one_page`)
+- Added `full-stack-flutter` to `test_all_golden_paths_accepted`
+- Added `tests/test_agent_runner.py` — covers Claude Code mode and subprocess branch
+- 211 tests total, all passing
+
+---
+
 ## [2.3.5] — 2026-03-13
 
 ### Added
 - **`nexus agent run --server`** — run any dev-workflow agent on a remote Nexus MCP server via HTTP instead of local `claude` CLI (e.g. `--server http://host:3900/mcp`)
+
+### Improved
+- **`code-reviewer` agent** — added mandatory repo context discovery phase: agent now reads `CLAUDE.md`/`README`, detects stack from manifest files, samples project structure and existing code, and checks linting config before reviewing — adapts to any repo instead of assuming TypeScript/Next.js
+
+### Fixed
+- **Path traversal** — `project_name` is now sanitized (`re.sub`) before use in `/tmp/nexus-*` paths across all ingest/remap/package tools
+- **Production assert guards** — replaced `assert proc.stdout` with explicit guards in `agent_runner.py` and `nexus_cli.py`
+- **Silent exceptions** — added `logger.exception()` to all bare `except` blocks in `memory.py`
+- **CLI startup latency** — `_check_update()` now runs in a background thread instead of blocking the main process
+- **Step labels** — pipeline now correctly shows `4/5` (validate) and `5/5` (package)
+- **`_find_workflow` crash** — no longer raises `FileNotFoundError` when `.claude/commands/` is absent
+- **`stream-json` parsing** — result field extraction now falls back to `content`/`text` fields if `result` is absent
+- **Package instructions** — `package_output` now emits golden-path-aware run commands (Flutter, React Native, JS)
+- **Dead code** — removed `_BLANK_TEMPLATE` from `memory.py`, dead block in `_print_errors`, redundant imports in `nexus_cli.py`
+- **`_VERSION`** — now read dynamically from `importlib.metadata` instead of hardcoded string
+- **Tests** — fixed 2 broken tests, added `full-stack-flutter` coverage, added `tests/test_agent_runner.py` (211 tests total)
 
 ---
 

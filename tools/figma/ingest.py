@@ -3,6 +3,7 @@ import io
 import json
 import logging
 import pathlib
+import re
 import shutil
 import zipfile
 from pathlib import Path, PurePosixPath
@@ -88,6 +89,7 @@ def register_ingest_tool(mcp: FastMCP) -> None:
         Returns:
             JSON with the manifest summary and _nexus_cache path.
         """
+        project_name = re.sub(r"[^a-zA-Z0-9_-]", "-", project_name)
         logger.info(f"ingest_figma_zip called - golden_path: '{golden_path}', project: {project_name}")
 
         if not golden_path.strip():
@@ -169,8 +171,11 @@ def register_ingest_tool(mcp: FastMCP) -> None:
                         if entry.is_dir():
                             continue
 
-                        parts = PurePosixPath(entry.filename).parts
-                        if any(p.startswith(".") or p in {"node_modules", ".next"} for p in parts):
+                        path = PurePosixPath(entry.filename)
+                        if path.is_absolute():
+                            continue
+                        parts = path.parts
+                        if any(p in ("..", "") or p.startswith(".") or p in {"node_modules", ".next"} for p in parts):
                             continue
 
                         total_files += 1

@@ -256,7 +256,7 @@
 
   <nav>
     <div class="nav-logo">NEXUS</div>
-    <div class="nav-version">v2.3.5</div>
+    <div class="nav-version">v2.3.8</div>
 
     <div class="nav-section">Getting Started</div>
     <a href="#overview">Overview</a>
@@ -627,6 +627,24 @@
       Use <code>-</code> as the file argument to read from stdin. Use <code>--context</code> / <code>-c</code> to pass an inline string. If neither is provided, the agent runs without context (useful for general questions).
     </div>
 
+    <h3>Review a GitHub repository</h3>
+
+    <p>Pass <code>--github owner/repo</code> to download a public repo and run the agent against it — no cloning required. Full URLs and <code>.git</code> suffixes are accepted.</p>
+
+    <pre><code><span class="comment"># Code review of a public GitHub repo</span>
+<span class="prompt">$</span> <span class="cmd">nexus agent run</span> code-reviewer <span class="flag">--github</span> rcdelacruz/skills
+
+<span class="comment"># Security audit of a repo (full URL also works)</span>
+<span class="prompt">$</span> <span class="cmd">nexus agent run</span> security <span class="flag">--github</span> https://github.com/rcdelacruz/skills
+
+<span class="comment"># Private repo — set GITHUB_TOKEN first</span>
+<span class="prompt">$</span> <span class="cmd">export</span> GITHUB_TOKEN=ghp_...
+<span class="prompt">$</span> <span class="cmd">nexus agent run</span> code-reviewer <span class="flag">--github</span> your-org/private-repo</code><button class="copy-btn" onclick="copy(this, 'nexus agent run code-reviewer --github rcdelacruz/skills')">copy</button></pre>
+
+    <div class="callout">
+      <code>--github</code> downloads the repo as a ZIP from the GitHub API, extracts it to a temp directory, and passes it to the agent via <code>--add-dir</code>. The temp directory is cleaned up automatically after the run. For private repos, set <code>GITHUB_TOKEN</code> or <code>GH_TOKEN</code> in your environment.
+    </div>
+
     <h3>Model selection</h3>
 
     <p>By default, agents use <code>claude-sonnet-4-6</code>. Override per-run or set a global default:</p>
@@ -822,6 +840,7 @@
         <tr><td><code>--claude-path</code></td><td>—</td><td>auto-detect</td><td>Explicit path to claude CLI binary</td></tr>
         <tr><td colspan="4" style="background:var(--surface2);color:var(--cyan);font-size:0.65rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.5rem 0.75rem;">nexus agent run · nexus workflow run</td></tr>
         <tr><td><code>--context</code></td><td><code>-c</code></td><td>—</td><td>Inline context string instead of a file</td></tr>
+        <tr><td><code>--github</code></td><td>—</td><td>—</td><td>GitHub repo to review (<code>owner/repo</code> or full URL). Downloads and adds the repo as context.</td></tr>
         <tr><td><code>--model</code></td><td><code>-m</code></td><td><code>claude-sonnet-4-6</code></td><td>Claude model to use</td></tr>
         <tr><td><code>--server</code></td><td>—</td><td>—</td><td>Remote Nexus MCP server URL (e.g. <code>http://host:3900/mcp</code>). Skips local claude CLI.</td></tr>
         <tr><td><code>--memory-path</code></td><td>—</td><td>—</td><td>Path to <code>.claude/memory/agents/</code> for persistent memory</td></tr>

@@ -1,8 +1,11 @@
 import importlib.metadata
+import json
 import logging
 import os
 import sys
 from mcp.server.fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 from tools.search import register_search_tools
 from tools.figma import register_figma_tools
 from tools.devsecops import register_devsecops_tools
@@ -12,9 +15,22 @@ try:
 except importlib.metadata.PackageNotFoundError:
     _VERSION = "dev"
 
+
+class _JsonFormatter(logging.Formatter):
+    def format(self, record):
+        return json.dumps({
+            "time": self.formatTime(record, "%Y-%m-%dT%H:%M:%S"),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        })
+
+
+_handler = logging.StreamHandler()
+_handler.setFormatter(_JsonFormatter())
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.getLevelName(os.environ.get("LOG_LEVEL", "INFO")),
+    handlers=[_handler],
 )
 logger = logging.getLogger(__name__)
 
@@ -46,6 +62,12 @@ register_devsecops_tools(mcp)
 def get_version() -> str:
     """Return the running nexus-toolkit version."""
     return _VERSION
+
+
+@mcp.custom_route("/health", methods=["GET"])
+async def health_check(request: Request) -> JSONResponse:
+    """Health check endpoint — returns status and version."""
+    return JSONResponse({"status": "ok", "version": _VERSION})
 
 
 logger.info("Nexus MCP server initialized")

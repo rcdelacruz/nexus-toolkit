@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import json
 import logging
 import os
@@ -12,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 _NEXUS_ROOT = pathlib.Path(__file__).parent.parent.parent
 _DEV_AGENTS_DIR = pathlib.Path(__file__).parent.parent / "dev-agents"
+
+_AGENT_IDLE_TIMEOUT_S = 240
+_AGENT_HTTP_TIMEOUT_S = 300
 
 # Registry maps agent name → subdirectory within tools/dev-agents/
 _AGENT_REGISTRY: dict[str, str] = {
@@ -44,6 +48,7 @@ _AGENT_REGISTRY: dict[str, str] = {
 }
 
 
+@functools.lru_cache(maxsize=32)
 def _load_dev_agent(agent_name: str) -> str:
     """Load agent markdown from tools/dev-agents/. Raises FileNotFoundError if not found."""
     subdir = _AGENT_REGISTRY.get(agent_name)
@@ -53,12 +58,14 @@ def _load_dev_agent(agent_name: str) -> str:
             return candidate.read_text(encoding="utf-8")
 
     # Fallback: glob across all subdirs (handles uvx-installed paths)
-    for md_file in _DEV_AGENTS_DIR.rglob(f"{agent_name}.md"):
-        return md_file.read_text(encoding="utf-8")
+    results = sorted(_DEV_AGENTS_DIR.rglob(f"{agent_name}.md"))
+    if results:
+        return results[0].read_text(encoding="utf-8")
 
     # Last resort: search relative to this file's installed location
-    for candidate in pathlib.Path(__file__).parent.rglob(f"{agent_name}.md"):
-        return candidate.read_text(encoding="utf-8")
+    fallback_results = sorted(pathlib.Path(__file__).parent.rglob(f"{agent_name}.md"))
+    if fallback_results:
+        return fallback_results[0].read_text(encoding="utf-8")
 
     available = ", ".join(sorted(_AGENT_REGISTRY.keys()))
     raise FileNotFoundError(
@@ -208,7 +215,7 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
             user_message,
         ]
 
-        idle_timeout = 240
+        idle_timeout = _AGENT_IDLE_TIMEOUT_S
 
         try:
             proc = await asyncio.create_subprocess_exec(
@@ -219,8 +226,9 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
             )
 
             chunks: list[str] = []
-            assert proc.stdout is not None
-            assert proc.stderr is not None
+            if proc.stdout is None or proc.stderr is None:
+                proc.kill()
+                return json.dumps({"error": "subprocess stdout/stderr unavailable"})
 
             while True:
                 try:
@@ -258,7 +266,7 @@ def register_devsecops_tools(mcp: FastMCP) -> None:
                 try:
                     event = json.loads(line)
                     if event.get("type") == "result":
-                        findings = event.get("result", "")
+                        findings = event.get("result") or event.get("content") or event.get("text") or ""
                         break
                 except json.JSONDecodeError:
                     continue

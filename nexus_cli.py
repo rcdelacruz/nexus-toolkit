@@ -18,11 +18,17 @@ All commands read from / write to /tmp/nexus-<project_name>/ automatically.
 
 import asyncio
 import base64
+import io
 import json
+import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
+import tempfile
+import threading
+import zipfile
 from typing import Annotated, Optional
 
 import typer
@@ -99,7 +105,15 @@ _THEME = Theme({
 console = Console(theme=_THEME)
 
 
-_VERSION = "2.3.5"
+try:
+    from importlib.metadata import version as _pkg_version
+    _VERSION = _pkg_version("nexus-toolkit")
+except Exception:
+    _VERSION = "dev"
+
+_MAX_DISPLAY_ERRORS = 15
+_MAX_DISPLAY_WARNINGS = 5
+_AGENT_HTTP_TIMEOUT_S = 300
 
 _LOGO = """\
 [cyan]███╗   ██╗███████╗██╗  ██╗██╗   ██╗███████╗[/cyan]
@@ -172,15 +186,9 @@ def _print_success(zip_path: pathlib.Path, total_files: int, size_kb: int) -> No
 def _print_errors(errors: list, warnings: list, project_name: str) -> None:
     console.print()
     console.print(Rule(style="bright_black"))
-    lines = []
-    for e in errors[:15]:
-        lines.append(Text.assemble(("  ✗ ", "bold red"), (e, "white")))
-    for w in warnings[:5]:
-        lines.append(Text.assemble(("  ⚠ ", "bold yellow"), (w, "dim white")))
-    content = "\n".join(str(l) for l in lines)
     console.print(Panel(
-        "\n".join(f"  [red]✗[/red] {e}" for e in errors[:15]) +
-        ("" if not warnings else "\n" + "\n".join(f"  [yellow]⚠[/yellow] {w}" for w in warnings[:5])),
+        "\n".join(f"  [red]✗[/red] {e}" for e in errors[:_MAX_DISPLAY_ERRORS]) +
+        ("" if not warnings else "\n" + "\n".join(f"  [yellow]⚠[/yellow] {w}" for w in warnings[:_MAX_DISPLAY_WARNINGS])),
         title="[bold red] validation failed [/bold red]",
         border_style="red",
         box=box.ROUNDED,
@@ -194,6 +202,7 @@ def _print_errors(errors: list, warnings: list, project_name: str) -> None:
 
 def _cache_json(project_name: str) -> str:
     """Return the minimal JSON needed to point validate/package at the cache."""
+    project_name = re.sub(r"[^a-zA-Z0-9_-]", "-", project_name)
     return json.dumps({"_nexus_cache": f"/tmp/nexus-{project_name}"})
 
 
@@ -233,8 +242,6 @@ def _find_claude(claude_path: Optional[str] = None) -> str:
     3. PATH (shutil.which)
     4. ~/.local/bin/claude (standard Claude Code install on macOS/Linux)
     """
-    import os
-
     candidate = claude_path or os.environ.get("CLAUDE_PATH")
     if candidate:
         p = pathlib.Path(candidate).expanduser()
@@ -274,7 +281,6 @@ Rules:
 
 def _decompose_description(description: str, claude_bin: str, model: str) -> tuple[list[str], list[str]]:
     """Call claude CLI to decompose a description into pages and components."""
-    import subprocess
     result = subprocess.run(
         [claude_bin, "--print", "--model", model, "--system-prompt", _DECOMPOSE_SYSTEM, description],
         capture_output=True, text=True,
@@ -306,6 +312,7 @@ def _find_agent(golden_path: str) -> pathlib.Path:
 
 def _get_golden_path_from_cache(project_name: str) -> str:
     """Read golden_path from the cached 01_manifest.json."""
+    project_name = re.sub(r"[^a-zA-Z0-9_-]", "-", project_name)
     manifest = pathlib.Path(f"/tmp/nexus-{project_name}/01_manifest.json")
     if not manifest.exists():
         console.print(f"[red]✗ No cache found for project:[/red] {project_name}  (run ingest first)")
@@ -350,7 +357,7 @@ def _print_help() -> None:
     cmds.add_row("run prompt",    "Full pipeline from a text description")
     cmds.add_row("run codebase",  "Full pipeline from an existing codebase")
     cmds.add_row("agent list",    "List available dev-workflow agents")
-    cmds.add_row("agent run",     "Run an agent against a file or diff")
+    cmds.add_row("agent run",     "Run an agent against a file, diff, or GitHub repo")
     cmds.add_row("workflow run",  "Run a slash-command workflow")
     console.print(Padding("[bold]Commands[/bold]", (0, 2)))
     console.print(Padding(cmds, (0, 2)))
@@ -362,6 +369,10 @@ def _print_help() -> None:
         ("[cyan]nexus run prompt[/cyan]", '[white]"A SaaS dashboard"[/white] [dim]-g nextjs-fullstack -p my-app[/dim]'),
         ("[cyan]nexus run zip[/cyan]",    "[white]~/Downloads/export.zip[/white] [dim]-g nextjs-static -p landing[/dim]"),
         ("[cyan]nexus run codebase[/cyan]", "[white]~/projects/old-app[/white] [dim]-g nextjs-fullstack[/dim]"),
+        ("", ""),
+        ("[dim]# agent run — file, diff, or GitHub repo[/dim]", ""),
+        ("[cyan]nexus agent run[/cyan]", "[white]security[/white] [dim]src/api/routes.ts[/dim]"),
+        ("[cyan]nexus agent run[/cyan]", '[white]code-reviewer[/white] [dim]--github owner/repo[/dim]'),
         ("", ""),
         ("[dim]# step-by-step[/dim]", ""),
         ("[cyan]nexus ingest prompt[/cyan]", '[white]"A todo app"[/white] [dim]-g vite-spa -p todos[/dim]'),
@@ -423,7 +434,7 @@ def _root(
     console.print()
     if version:
         raise typer.Exit()
-    _check_update()
+    threading.Thread(target=_check_update, daemon=True).start()
     if help or ctx.invoked_subcommand is None:
         _print_help()
         raise typer.Exit()
@@ -434,7 +445,6 @@ def _root(
 @app.command("update")
 def update() -> None:
     """Upgrade nexus-toolkit to the latest version from PyPI."""
-    import subprocess
     installer = shutil.which("uv")
     if installer:
         cmd = ["uv", "tool", "install", "--reinstall", "--force", "nexus-toolkit"]
@@ -565,7 +575,7 @@ def remap(
         raw = asyncio.run(tools["remap_to_golden_path"](manifest_json, prompt or ""))
 
     data = _parse_result(raw, "remap")
-    cache = data.get("_nexus_cache", f"/tmp/nexus-{project_name}")
+    cache = data.get("_nexus_cache", f"/tmp/nexus-{re.sub(r'[^a-zA-Z0-9_-]', '-', project_name)}")
     queue_dir = pathlib.Path(cache) / "05_queue"
     queue_count = len(list(queue_dir.glob("*.md"))) if queue_dir.exists() else 0
 
@@ -595,7 +605,7 @@ def transform(
     Processes every file in 05_queue/ using the golden-path agent as system prompt,
     updates 04_file_tree.json, and deletes each queue file when done.
     """
-    cache = pathlib.Path(f"/tmp/nexus-{project_name}")
+    cache = pathlib.Path(f"/tmp/nexus-{re.sub(r'[^a-zA-Z0-9_-]', '-', project_name)}")
     queue_dir = cache / "05_queue"
 
     if not cache.exists():
@@ -858,7 +868,7 @@ def _run_pipeline(tools, project_name, golden_path, user_prompt, output_dir, mod
         p.add_task("  2/4  remapping to golden path…")
         raw = asyncio.run(tools["remap_to_golden_path"](manifest_json, user_prompt or ""))
     remap_data = _parse_result(raw, "remap")
-    cache = remap_data.get("_nexus_cache", f"/tmp/nexus-{project_name}")
+    cache = remap_data.get("_nexus_cache", f"/tmp/nexus-{re.sub(r'[^a-zA-Z0-9_-]', '-', project_name)}")
     queue_dir = pathlib.Path(cache) / "05_queue"
     queue_count = len(list(queue_dir.glob("*.md"))) if queue_dir.exists() else 0
     _step_done(2, 4, "remap", f"{queue_count} queue file(s)")
@@ -912,7 +922,7 @@ def _validate_and_package(tools, project_name, output_dir, cache):
 
     # Validate
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), TimeElapsedColumn(), console=console, transient=True) as p:
-        p.add_task("  4/4  validating…")
+        p.add_task("  4/5  validating…")
         raw = asyncio.run(tools["validate_output"](file_tree_json))
     val_data = _parse_result(raw, "validate")
     passed = val_data.get("passed", False)
@@ -922,7 +932,7 @@ def _validate_and_package(tools, project_name, output_dir, cache):
         _step_error("validate", f"{val_data.get('error_count', 0)} error(s)")
         _print_errors(errors, warnings, project_name)
         raise typer.Exit(1)
-    _step_done(4, 4, "validate", f"passed · {val_data.get('warning_count', 0)} warning(s)")
+    _step_done(4, 5, "validate", f"passed · {val_data.get('warning_count', 0)} warning(s)")
 
     # Package
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), TimeElapsedColumn(), console=console, transient=True) as p:
@@ -978,11 +988,13 @@ def _find_dev_agent(agent_name: str) -> pathlib.Path:
         candidate = _DEV_AGENTS_DIR / subdir / f"{agent_name}.md"
         if candidate.exists():
             return candidate
-    for p in _DEV_AGENTS_DIR.rglob(f"{agent_name}.md"):
-        return p
+    results = sorted(_DEV_AGENTS_DIR.rglob(f"{agent_name}.md"))
+    if results:
+        return results[0]
     # uvx-installed fallback
-    for p in pathlib.Path(__file__).parent.rglob(f"dev-agents/**/{agent_name}.md"):
-        return p
+    fallback_results = sorted(pathlib.Path(__file__).parent.rglob(f"dev-agents/**/{agent_name}.md"))
+    if fallback_results:
+        return fallback_results[0]
     available = ", ".join(sorted(_DEV_AGENT_REGISTRY.keys()))
     console.print(f"[red]✗ Agent not found:[/red] {agent_name}")
     console.print(f"  Available: [dim]{available}[/dim]")
@@ -998,10 +1010,71 @@ def _find_workflow(workflow_name: str) -> pathlib.Path:
     for p in candidates:
         if p.exists():
             return p
-    workflows = sorted(p.stem for p in (_NEXUS_ROOT / ".claude" / "commands").glob("*.md"))
+    commands_dir = _NEXUS_ROOT / ".claude" / "commands"
+    if not commands_dir.exists():
+        workflows: list[str] = []
+    else:
+        workflows = sorted(p.stem for p in commands_dir.glob("*.md"))
     console.print(f"[red]✗ Workflow not found:[/red] {workflow_name}")
-    console.print(f"  Available: [dim]{', '.join(workflows)}[/dim]")
+    console.print(f"  Available: [dim]{', '.join(workflows) if workflows else '(none)'}[/dim]")
     raise typer.Exit(1)
+
+
+def _fetch_github_repo(slug: str) -> tuple[pathlib.Path, str]:
+    """Download a GitHub repo as a ZIP and extract it to a temp directory.
+
+    Returns (tmp_root, normalized_slug). tmp_root is the mkdtemp parent — caller
+    must shutil.rmtree(tmp_root) when done. The extracted repo lives at tmp_root/repo/.
+    """
+    import urllib.request
+    import urllib.error
+
+    # Normalise: strip https://github.com/ prefix and .git suffix
+    slug = re.sub(r"^https?://github\.com/", "", slug).rstrip("/")
+    slug = re.sub(r"\.git$", "", slug)
+
+    if not re.fullmatch(r"[A-Za-z0-9._-]+/[A-Za-z0-9._-]+", slug):
+        console.print(f"[red]✗ Invalid GitHub slug:[/red] {slug}  (expected owner/repo)")
+        raise typer.Exit(1)
+
+    url = f"https://api.github.com/repos/{slug}/zipball"
+    headers = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    console.print(f"  [dim]↓ fetching[/dim]  github.com/{slug} …")
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            zip_bytes = resp.read()
+    except urllib.error.HTTPError as exc:
+        console.print(f"[red]✗ GitHub API error {exc.code}:[/red] {exc.reason}")
+        if exc.code == 404:
+            console.print("  Repo not found or private. Set GITHUB_TOKEN for private repos.")
+        raise typer.Exit(1)
+    except urllib.error.URLError as exc:
+        console.print(f"[red]✗ Network error:[/red] {exc.reason}")
+        raise typer.Exit(1)
+
+    tmp = pathlib.Path(tempfile.mkdtemp(prefix="nexus-gh-"))
+    try:
+        with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+            # Zip Slip: reject members with absolute paths or path traversal components
+            tmp_resolved = tmp.resolve()
+            for member in zf.infolist():
+                member_path = (tmp / member.filename).resolve()
+                if not str(member_path).startswith(str(tmp_resolved)):
+                    shutil.rmtree(tmp, ignore_errors=True)
+                    console.print(f"[red]✗ Zip Slip detected in archive:[/red] {member.filename}")
+                    raise typer.Exit(1)
+            zf.extractall(tmp)
+    except (zipfile.BadZipFile, ValueError) as exc:
+        shutil.rmtree(tmp, ignore_errors=True)
+        console.print(f"[red]✗ Failed to read archive:[/red] {exc}")
+        raise typer.Exit(1)
+
+    return tmp, slug
 
 
 # ── nexus agent list ──────────────────────────────────────────────────────────
@@ -1091,7 +1164,7 @@ def _agent_run_remote(
     console.print()
 
     try:
-        with urllib.request.urlopen(req, timeout=300) as resp:
+        with urllib.request.urlopen(req, timeout=_AGENT_HTTP_TIMEOUT_S) as resp:
             raw = resp.read().decode()
     except urllib.error.URLError as exc:
         console.print(f"[red]✗ Remote error:[/red] {exc}")
@@ -1142,18 +1215,32 @@ def agent_run(
     server: Annotated[
         Optional[str], typer.Option("--server", help="Remote Nexus MCP server URL (e.g. http://host:3900/mcp).")
     ] = None,
+    github: Annotated[
+        Optional[str], typer.Option("--github", help="GitHub repo to review (owner/repo or full URL). Downloads and adds the repo as context. For private repos, set GITHUB_TOKEN or GH_TOKEN env var.")
+    ] = None,
 ) -> None:
-    """Run a dev-workflow agent (e.g. code-reviewer, security) against a file or inline context."""
+    """Run a dev-workflow agent (e.g. code-reviewer, security) against a file, inline context, or GitHub repo."""
     import sys as _sys
     from tools.devsecops.memory import build_memory_context_block, update_memory
 
     if server:
+        if github:
+            console.print("[yellow]⚠[/yellow]  --github is ignored when --server is used.")
         _agent_run_remote(server, agent_name, file_path, context, model)
         return
 
     agent_file = _find_dev_agent(agent_name)
 
-    if context:
+    github_tmp: Optional[pathlib.Path] = None  # mkdtemp root — cleaned up in finally
+    github_repo_dir: Optional[pathlib.Path] = None  # extracted repo (subdir of github_tmp)
+
+    if github:
+        github_tmp, slug = _fetch_github_repo(github)
+        subdirs = [p for p in github_tmp.iterdir() if p.is_dir()]
+        github_repo_dir = subdirs[0] if len(subdirs) == 1 else github_tmp
+        input_text = f"Review the repository {slug}. All files are available in the added directory."
+        source_label = f"github:{slug}"
+    elif context:
         input_text = context
         source_label = "inline context"
     elif file_path and str(file_path) == "-":
@@ -1166,7 +1253,7 @@ def agent_run(
         input_text = file_path.read_text(encoding="utf-8", errors="replace")
         source_label = str(file_path)
     else:
-        console.print("[red]✗ Provide a file path or --context string.[/red]")
+        console.print("[red]✗ Provide a file path, --context string, or --github owner/repo.[/red]")
         raise typer.Exit(1)
 
     # Auto-detect memory_path from cwd if --remember given without --memory-path
@@ -1211,6 +1298,8 @@ def agent_run(
         "--system-prompt", agent_file.read_text(encoding="utf-8"),
         input_text,
     ]
+    if github_repo_dir:
+        cmd += ["--add-dir", str(github_repo_dir)]
 
     console.print(Rule(agent_name, style="bright_black"))
     console.print()
@@ -1221,7 +1310,9 @@ def agent_run(
             # Stream output to terminal while capturing for memory write
             import io as _io
             proc = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=None)
-            assert proc.stdout is not None
+            if proc.stdout is None:
+                proc.kill()
+                raise RuntimeError("subprocess stdout unavailable")
             buf = _io.StringIO()
             for line in proc.stdout:
                 print(line, end="", flush=True)
@@ -1236,6 +1327,9 @@ def agent_run(
         console.print()
         console.print(f"\n  [yellow]⚠[/yellow]  interrupted\n")
         raise typer.Exit(1)
+    finally:
+        if github_tmp and github_tmp.exists():
+            shutil.rmtree(github_tmp, ignore_errors=True)  # cleans mkdtemp root + all contents
 
     console.print()
     console.print(Rule(style="bright_black"))

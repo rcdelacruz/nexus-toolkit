@@ -1,4 +1,9 @@
+import asyncio
+import ipaddress
+import json
 import logging
+import socket
+from urllib.parse import urlparse
 from mcp.server.fastmcp import FastMCP
 try:
     from ddgs import DDGS
@@ -47,28 +52,43 @@ async def nexus_search(
     if mode == "docs":
         final_query += " site:readthedocs.io OR site:github.com OR site:stackoverflow.com OR documentation API"
 
+    def _run_search() -> list[dict]:
+        with DDGS(timeout=SEARCH_TIMEOUT) as ddgs:
+            return list(ddgs.text(final_query, max_results=max_results))
+
     results = []
     try:
-        with DDGS(timeout=SEARCH_TIMEOUT) as ddgs:
-            ddg_results = list(ddgs.text(final_query, max_results=max_results))
+        ddg_results = await asyncio.to_thread(_run_search)
 
-            if not ddg_results:
-                return "No results found. Try a different query or mode."
+        if not ddg_results:
+            return "No results found. Try a different query or mode."
 
-            for r in ddg_results:
-                title = r.get('title', 'No title')
-                url = r.get('href', 'No URL')
-                snippet = r.get('body', 'No description')
-                results.append(f"- [Title]: {title}\n  [URL]: {url}\n  [Snippet]: {snippet}")
+        for r in ddg_results:
+            title = r.get('title', 'No title')
+            url = r.get('href', 'No URL')
+            snippet = r.get('body', 'No description')
+            results.append(f"- [Title]: {title}\n  [URL]: {url}\n  [Snippet]: {snippet}")
 
-            logger.info(f"Search successful - Found {len(results)} results")
-            return "\n\n".join(results)
+        logger.info(f"Search successful - Found {len(results)} results")
+        return "\n\n".join(results)
 
     except TimeoutError:
         return "Error: Search timed out. Please try again."
     except Exception as e:
         logger.exception(f"Unexpected error during search: {query}")
         return f"Error: Search failed: {str(e)}"
+
+
+def _is_private_host(url: str) -> bool:
+    try:
+        hostname = urlparse(url).hostname
+        for _, _, _, _, sockaddr in socket.getaddrinfo(hostname, None, type=socket.SOCK_STREAM):
+            ip = ipaddress.ip_address(sockaddr[0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                return True
+        return False
+    except Exception:
+        return True  # block on resolution failure
 
 
 async def nexus_read(url: str, focus: str = "auto") -> str:
@@ -98,6 +118,9 @@ async def nexus_read(url: str, focus: str = "auto") -> str:
     if not url.startswith(("http://", "https://")):
         return "Error: URL must start with http:// or https://"
 
+    if await asyncio.to_thread(_is_private_host, url):
+        return json.dumps({"error": "Private/internal URLs are not allowed"})
+
     if focus == "auto":
         technical_indicators = ["docs", "api", "reference", "github", "guide", "documentation"]
         if any(ind in url.lower() for ind in technical_indicators):
@@ -106,7 +129,7 @@ async def nexus_read(url: str, focus: str = "auto") -> str:
             focus = "general"
 
     async with httpx.AsyncClient(
-        follow_redirects=True,
+        follow_redirects=False,
         headers={"User-Agent": "NexusMCP/1.0"},
         timeout=REQUEST_TIMEOUT
     ) as client:
@@ -162,10 +185,11 @@ async def nexus_read(url: str, focus: str = "auto") -> str:
             else:
                 text = soup.get_text(separator='\n')
                 lines = [line.strip() for line in text.split('\n') if line.strip()]
-                output.append("\n".join(lines))
+                output.extend(lines)
 
-            result = "\n".join(output)[:MAX_CONTENT_LENGTH]
-            if len("\n".join(output)) > MAX_CONTENT_LENGTH:
+            joined = "\n".join(output)
+            result = joined[:MAX_CONTENT_LENGTH]
+            if len(joined) > MAX_CONTENT_LENGTH:
                 result += f"\n\n[Content truncated at {MAX_CONTENT_LENGTH} characters]"
 
             logger.info(f"Read successful - Extracted {len(result)} characters from {url}")

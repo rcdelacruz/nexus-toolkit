@@ -1,8 +1,10 @@
 import datetime
+import functools
 import json
 import logging
 import pathlib
 import re
+from pathlib import PurePosixPath
 from mcp.server.fastmcp import FastMCP
 
 logger = logging.getLogger(__name__)
@@ -184,6 +186,7 @@ def _load_input(json_str: str, cache_file: str) -> dict:
     return data
 
 
+@functools.lru_cache(maxsize=16)
 def _load_golden_path_meta(golden_path: str) -> tuple[dict, dict]:
     """Load manifest.json; classification rules are embedded under manifest['classification']."""
     gp_dir = GOLDEN_PATHS_DIR / golden_path
@@ -198,6 +201,7 @@ def _load_golden_path_meta(golden_path: str) -> tuple[dict, dict]:
     return manifest, rules
 
 
+@functools.lru_cache(maxsize=16)
 def _load_reference_files(golden_path: str) -> list[dict]:
     """Read every file from the reference/ directory as working boilerplate."""
     ref_dir = GOLDEN_PATHS_DIR / golden_path / "reference"
@@ -519,7 +523,7 @@ def register_remap_tool(mcp: FastMCP) -> None:
             return json.dumps({"error": f"Manifest contains error: {manifest['error']}"})
 
         golden_path = manifest.get("golden_path", "nextjs-fullstack")
-        project_name = manifest.get("project_name", "my-app")
+        project_name = re.sub(r"[^a-zA-Z0-9_-]", "-", manifest.get("project_name", "my-app"))
         source_type = manifest.get("source_type", "figma")
 
         # ── Load golden path manifest and classification rules ────────────────
@@ -664,7 +668,6 @@ def register_remap_tool(mcp: FastMCP) -> None:
 
         # ── 5. Move assets ────────────────────────────────────────────────────
         for asset in manifest.get("assets", []):
-            from pathlib import PurePosixPath
             asset_name = PurePosixPath(asset["filename"]).name
             output_map[f"public/{asset_name}"] = BINARY_PLACEHOLDER
 

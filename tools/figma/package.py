@@ -2,8 +2,13 @@ import io
 import json
 import logging
 import pathlib
+import re
 import zipfile
 from mcp.server.fastmcp import FastMCP
+from tools.figma.validate import _build_reachability, _is_config_file
+from tools.figma.remap import BINARY_PLACEHOLDER
+
+NEXUS_ROOT = pathlib.Path(__file__).parent.parent.parent
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +64,7 @@ def register_package_tool(mcp: FastMCP) -> None:
         if not files:
             return json.dumps({"error": "No files to package — file tree is empty"})
 
-        project_name = file_tree.get("project_name", "my-app")
+        project_name = re.sub(r"[^a-zA-Z0-9_-]", "-", file_tree.get("project_name", "my-app"))
         golden_path = file_tree.get("golden_path", "nextjs-fullstack")
         passthrough_paths: set[str] = set(file_tree.get("passthrough_paths", []))
 
@@ -71,11 +76,8 @@ def register_package_tool(mcp: FastMCP) -> None:
         #   4. It is listed in the golden path manifest's requiredFiles
         # Reference boilerplate stubs that the Figma design never imports are
         # silently dropped — they add noise and dead code to the output ZIP.
-        from tools.figma.validate import _build_reachability, _is_config_file
-        from tools.figma.remap import BINARY_PLACEHOLDER
 
         # Load requiredFiles from the golden path manifest so they are never stripped
-        NEXUS_ROOT = pathlib.Path(__file__).parent.parent.parent
         gp_manifest_path = NEXUS_ROOT / "golden_paths" / golden_path / "manifest.json"
         required_files: set[str] = set()
         if gp_manifest_path.exists():
@@ -136,6 +138,13 @@ def register_package_tool(mcp: FastMCP) -> None:
             f"{size_bytes} bytes, project: {project_name}, path: {zip_path}"
         )
 
+        if golden_path == "full-stack-flutter":
+            run_cmd = "flutter pub get && flutter run"
+        elif golden_path == "full-stack-rn":
+            run_cmd = "npm install && npx react-native start"
+        else:
+            run_cmd = "pnpm install && pnpm dev"
+
         return json.dumps({
             "project_name": project_name,
             "golden_path": golden_path,
@@ -148,6 +157,6 @@ def register_package_tool(mcp: FastMCP) -> None:
                 f"ZIP is ready at {zip_path}. "
                 f"Run: cp {zip_path} ~/Desktop/ && "
                 f"unzip ~/Desktop/{project_name}.zip && "
-                f"cd {project_name} && pnpm install && pnpm dev"
+                f"cd {project_name} && {run_cmd}"
             ),
         })

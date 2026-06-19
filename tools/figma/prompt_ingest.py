@@ -21,6 +21,7 @@ Callers are responsible for decomposing the description into pages/components:
 import json
 import logging
 import pathlib
+import re
 import shutil
 
 from mcp.server.fastmcp import FastMCP
@@ -136,6 +137,7 @@ def register_prompt_ingest_tool(mcp: FastMCP) -> None:
                 )
             })
 
+        project_name = re.sub(r"[^a-zA-Z0-9_-]", "-", project_name)
         resolved_pages = list(pages) if pages else []
         resolved_components = list(components) if components else []
 

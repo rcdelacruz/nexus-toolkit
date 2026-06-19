@@ -782,7 +782,7 @@ wheels = [
 
 [[package]]
 name = "nexus-toolkit"
-version = "2.1.5"
+version = "2.3.7"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
