@@ -74,3 +74,6 @@ sample-portfolio.zip
 
 # nexus agent personal memory (per-developer, not shared)
 .claude/memory/agents/personal/
+
+# n8n workflows — symlinked from ../n8n-ai-workflow/workflows/
+n8n-workflow
