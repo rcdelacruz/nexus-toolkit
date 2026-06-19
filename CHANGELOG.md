@@ -7,6 +7,14 @@ Versions correspond to the `nexus-toolkit` PyPI package.
 
 ---
 
+## [2.3.9] — 2026-06-19
+
+### Improved
+- **All 6 reviewer agents** (code-reviewer, security, database, deployment, monitoring, performance) — structured JSON output: `blocked`, `overall_severity`, `summary`, and typed `findings[]` array with `id`, `severity`, `category`, `file`, `line`, `title`, `description`, `suggestion`
+- **DS-1, DS-2, DS-3, DS-5 n8n parse nodes** — extract JSON findings block from agent output; `blocked` and severity read from structured fields; DS-3 retains diff-regex hard gate
+
+---
+
 ## [2.3.8] — 2026-06-19
 
 ### Added
